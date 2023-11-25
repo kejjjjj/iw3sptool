@@ -110,13 +110,14 @@ typedef vec_t vec4_t[4];
 #include "cm_brush.hpp"
 #include "cm_terrain.hpp"
 
+#include "e_utilities.hpp"
+
 #include "g_entity.hpp"
 
 
 #include "com_channel.hpp"
 #include "com_vector.hpp"
 
-#include "e_utilities.hpp"
 #include "sys_tools.hpp"
 
 

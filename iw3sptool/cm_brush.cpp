@@ -15,6 +15,8 @@ void Cmd_CollisionFilter_f()
 		return;
 	}
 
+	rb_requesting_to_stop_rendering = true;
+
 	if (cmd_args->argc[cmd_args->nesting] == 1) {
 
 		if (s_brushes.empty()) {
@@ -48,7 +50,8 @@ void Cmd_CollisionFilter_f()
 	CM_DiscoverTerrain(filter);
 
 	Com_Printf("adding %i brushes and %i terrain pieces to the render queue\n", s_brushes.size(), cm_terrainpoints.size());
-
+	
+	rb_requesting_to_stop_rendering = false;
 
 }
 
@@ -309,8 +312,13 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 {
 	decltype(auto) ents = gameEntities::getInstance();
 
-	if (s_brushes.empty() && ents.empty() /*&& cm_terrainpoints.empty()*/)
+	if (rb_requesting_to_stop_rendering) {
 		return;
+	}
+
+	if (s_brushes.empty() && ents.empty() && cm_terrainpoints.empty() || clientUI->connectionState == CA_DISCONNECTED)
+		return;
+
 
 	cplane_s frustum_planes[6];
 
@@ -359,11 +367,6 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 
 	}
 
-	//if (find_evar<bool>("Only Elevators")->get() == false) {
-	//	for (auto& i : cm_terrainpoints) {
-	//		CM_ShowTerrain(&i, frustum_planes);
-	//	}
-	//}
 
 }
 void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_test, float drawdist, bool only_bounces, bool only_elevators)
@@ -398,6 +401,11 @@ void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_te
 			c[0] = 1.f - n;
 			c[1] = n;
 			c[2] = 0.f;
+		}
+
+
+		if (rb_requesting_to_stop_rendering) {
+			return;
 		}
 
 		if (poly_type == polyType::POLYS)

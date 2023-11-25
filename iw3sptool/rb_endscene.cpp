@@ -62,6 +62,7 @@ void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const BYTE* 
 }
 int RB_AddDebugLine(GfxPointVertex* verts, char depthTest, const vec_t* start, vec_t* end, const BYTE* color, int vertCount)
 {
+
 	int _vc = vertCount;
 	uint8_t _color[4]{ 0,0,0,0 };
 	if (vertCount + 2 > 2725)

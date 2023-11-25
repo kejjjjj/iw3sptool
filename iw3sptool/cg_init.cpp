@@ -53,6 +53,7 @@ void CG_Init()
     Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be elevated", v, l);
 
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
+    Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 
 
     return;

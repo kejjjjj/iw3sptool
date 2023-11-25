@@ -79,24 +79,24 @@ public:
 			VectorCopy(og_mins, linked_brush->mins);
 			VectorCopy(og_maxs, linked_brush->maxs);
 
-			linked_brush->mins[0] += origin->x;
-			linked_brush->mins[1] += origin->y;
-			linked_brush->mins[2] += origin->z;
+			if ((Dvar_FindMalleableVar("cm_experimental")->current.enabled && g->classname == SL_GetStringOfSize("script_brushmodel")) == false) {
+				linked_brush->mins[0] += origin->x;
+				linked_brush->mins[1] += origin->y;
+				linked_brush->mins[2] += origin->z;
 
-			linked_brush->maxs[0] += origin->x;
-			linked_brush->maxs[1] += origin->y;
-			linked_brush->maxs[2] += origin->z;
+				linked_brush->maxs[0] += origin->x;
+				linked_brush->maxs[1] += origin->y;
+				linked_brush->maxs[2] += origin->z;
 
-			for (auto& winding : brush_geometry.windings) {
-				for (auto& w : winding.points) {
-					
-					//std::cout << w << " + " << origin << " = " << w + *origin << '\n';
 
-					w.x += origin->x;
-					w.y += origin->y;
-					w.z += origin->z;
+				for (auto& winding : brush_geometry.windings) {
+					for (auto& w : winding.points) {
+						w.x += origin->x;
+						w.y += origin->y;
+						w.z += origin->z;
 
-					
+
+					}
 				}
 			}
 

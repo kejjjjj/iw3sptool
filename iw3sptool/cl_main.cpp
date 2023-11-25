@@ -2,6 +2,7 @@
 
 void CL_Disconnect()
 {
+	rb_requesting_to_stop_rendering = true;
 
 	if (clientUI->connectionState != CA_DISCONNECTED) { //gets called in the loading screen in 1.7
 		std::cout << "disconnecting\n";
@@ -11,6 +12,9 @@ void CL_Disconnect()
 	s_brushes.clear();
 	cm_terrainpoints.clear();
 	gameEntities::getInstance().clear();
+
+	rb_requesting_to_stop_rendering = false;
+
 
 	return ((void(*)())0x444F10)();
 
