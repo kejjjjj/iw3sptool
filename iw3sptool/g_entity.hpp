@@ -73,40 +73,43 @@ public:
 		if (brush_geometry.brush == nullptr)
 			return;
 
-		if (*origin != oldOrigin) {
+		if (*origin != oldOrigin || *orientation != oldOrientation) {
 			brush_geometry = original_geometry;
 
 			VectorCopy(og_mins, linked_brush->mins);
 			VectorCopy(og_maxs, linked_brush->maxs);
 
-			if ((Dvar_FindMalleableVar("cm_experimental")->current.enabled && g->classname == SL_GetStringOfSize("script_brushmodel")) == false) {
-				linked_brush->mins[0] += origin->x;
-				linked_brush->mins[1] += origin->y;
-				linked_brush->mins[2] += origin->z;
+			brush_geometry.origin += *origin;
+			//linked_brush->mins[0] += origin->x;
+			//linked_brush->mins[1] += origin->y;
+			//linked_brush->mins[2] += origin->z;
 
-				linked_brush->maxs[0] += origin->x;
-				linked_brush->maxs[1] += origin->y;
-				linked_brush->maxs[2] += origin->z;
+			//linked_brush->maxs[0] += origin->x;
+			//linked_brush->maxs[1] += origin->y;
+			//linked_brush->maxs[2] += origin->z;
+			
 
+
+			//if ((Dvar_FindMalleableVar("cm_experimental")->current.enabled && g->classname == SL_GetStringOfSize("script_brushmodel")) == false) {
 
 				for (auto& winding : brush_geometry.windings) {
 					for (auto& w : winding.points) {
 						w.x += origin->x;
 						w.y += origin->y;
 						w.z += origin->z;
-
-
 					}
 				}
-			}
+			//}
+			
 
 			oldOrigin = *origin;
+			oldOrientation = *orientation;
 		}
 
 		fvec3 mins = *origin + fvec3(linked_brush->mins);
 		fvec3 maxs = *origin + fvec3(linked_brush->maxs);
 
-		if (CM_BrushInView(linked_brush, frustum_planes, numPlanes)) {
+		if (CM_BoundsInView(mins, maxs, frustum_planes, numPlanes)) {
 			RB_RenderWinding(brush_geometry, poly_type, depth_test, drawdist, false, false);
 		}
 

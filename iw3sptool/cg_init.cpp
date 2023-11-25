@@ -1,5 +1,21 @@
 #include "pch.hpp"
 
+const unsigned char completeVersion[] =
+{
+    BUILD_YEAR_CH0, BUILD_YEAR_CH1, BUILD_YEAR_CH2, BUILD_YEAR_CH3,
+    '-',
+    BUILD_MONTH_CH0, BUILD_MONTH_CH1,
+    '-',
+    BUILD_DAY_CH0, BUILD_DAY_CH1,
+    'T',
+    BUILD_HOUR_CH0, BUILD_HOUR_CH1,
+    ':',
+    BUILD_MIN_CH0, BUILD_MIN_CH1,
+    ':',
+    BUILD_SEC_CH0, BUILD_SEC_CH1,
+    '\0'
+};
+
 void CG_Init()
 {
     MH_STATUS state = MH_STATUS::MH_OK;
@@ -44,6 +60,10 @@ void CG_Init()
     l.value.min = 0.f;
     v.enabled = true;
 
+    static std::string date = std::string(__DATE__) + " - " + std::string(__TIME__);
+
+    v.string = "\0";
+
     Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
     Dvar_RegisterNew("cm_showCollisionDepthTest", dvar_type::boolean, dvar_flags::saved, "Select whether to use depth test in collision surfaces display", v, l);
 
@@ -53,7 +73,9 @@ void CG_Init()
     Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be elevated", v, l);
 
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
-    Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
+    Dvar_RegisterNew("tool_version", dvar_type::string, dvar_flags::write_protected, date.c_str(), v, l);
+
+    //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 
 
     return;

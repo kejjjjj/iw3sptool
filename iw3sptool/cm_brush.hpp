@@ -17,6 +17,7 @@ struct showcol_brush
 	std::vector<sc_winding_t> windings;
 	cbrush_t* brush;
 	int numVerts = 0;
+	fvec3 origin;
 	//std::vector<SimplePlaneIntersection> intersections;
 };
 

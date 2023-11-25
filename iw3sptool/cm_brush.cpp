@@ -78,6 +78,8 @@ showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor)
 	current_winding.windings.clear();
 	current_winding.numVerts = 0;
 	current_winding.brush = brush;
+	current_winding.origin = brush->get_origin();
+
 	current_brush = brush;
 
 	do {
@@ -376,7 +378,7 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 }
 void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_test, float drawdist, bool only_bounces, bool only_elevators)
 {
-	if (sb.brush->get_origin().dist(predictedPlayerState->origin) > drawdist)
+	if (sb.origin.dist(predictedPlayerState->origin) > drawdist)
 		return;
 
 	for (auto& i : sb.windings) {
