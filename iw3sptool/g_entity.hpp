@@ -116,6 +116,16 @@ public:
 	{
 		return gentity_type::BRUSHMODEL;
 	}
+
+	void restore_original_state() 
+	{
+		if (!linked_brush)
+			return;
+
+		VectorCopy(og_mins, linked_brush->mins);
+		VectorCopy(og_maxs, linked_brush->maxs);
+	}
+
 private:
 	cbrush_t* linked_brush = 0;
 	showcol_brush brush_geometry;
@@ -142,7 +152,32 @@ public:
 		entities.push_back(std::move(ent));
 	}
 	bool empty() const noexcept { return entities.empty(); }
-	void clear() { entities.clear(); }
+	void clear() {
+		brushModelEntity* bmodel = 0;
+
+		for (auto& e : entities) {
+			
+			switch (e->get_type()) {
+			case gentity_type::BRUSHMODEL:
+
+
+				bmodel = dynamic_cast<brushModelEntity*>(e.get());
+
+				if(bmodel)
+					bmodel->restore_original_state();
+				else {
+					Com_Printf("^1what the actual fuck\n");
+				}
+				break;
+			default:
+				break;
+			}
+
+		}
+
+		entities.clear();
+	
+	}
 	size_t size() const noexcept { return entities.size(); }
 
 	using iterator = std::vector<std::unique_ptr<gameEntity>>::iterator;

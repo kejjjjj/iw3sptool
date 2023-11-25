@@ -31,6 +31,8 @@ void Cmd_ShowEntities_f()
 
 void G_DiscoverGentities(level_locals_t* l, const char* classname)
 {
+	rb_requesting_to_stop_rendering = true;
+
 	decltype(auto) ents = gameEntities::getInstance();
 
 	for (int i = 0; i < l->num_entities; i++) {
@@ -48,5 +50,7 @@ void G_DiscoverGentities(level_locals_t* l, const char* classname)
 
 
 	std::cout << "a total of " << ents.size() << " entities\n";
+
+	rb_requesting_to_stop_rendering = false;
 
 }

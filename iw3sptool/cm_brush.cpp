@@ -20,12 +20,17 @@ void Cmd_CollisionFilter_f()
 	if (cmd_args->argc[cmd_args->nesting] == 1) {
 
 		if (s_brushes.empty()) {
+			rb_requesting_to_stop_rendering = false;
+
 			return Com_Printf("there are no brushes to be cleared.. did you intend to use cm_showCollisionFilter <material>?\n");
 		}
 
 		Com_Printf("clearing %i brushes from the render queue\n", s_brushes.size());
 		s_brushes.clear();
 		cm_terrainpoints.clear();
+
+		rb_requesting_to_stop_rendering = false;
+
 		return;
 	}
 
@@ -40,7 +45,7 @@ void Cmd_CollisionFilter_f()
 		if (strstr(mat, filter) == 0 && strcmp(filter, "all"))
 			continue;
 
-		if (strcmp("clip", filter) == 0 && (strstr(mat, "foliage") || strstr(mat, "water"))) //ignore clip_foliage and clip_water because they're so useless
+		if (strstr(mat, "clip_foliage")) //ignore clip_foliage because it's so useless
 			continue;
 
 		s_brushes.push_back(CM_GetBrushWindings(&cm->brushes[i], vec4_t{0,1,0,0.3f}));

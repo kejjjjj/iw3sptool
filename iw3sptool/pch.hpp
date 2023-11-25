@@ -112,11 +112,12 @@ typedef vec_t vec4_t[4];
 
 #include "e_utilities.hpp"
 
-#include "g_entity.hpp"
-
 
 #include "com_channel.hpp"
 #include "com_vector.hpp"
+
+#include "g_entity.hpp"
+
 
 #include "sys_tools.hpp"
 
