@@ -9,6 +9,9 @@ cmd_function_s* Cmd_FindCommand(const char* name)
         call fnc;
     }
 }
+
+cmd_function_s cmds[24];
+
 cmd_function_s* Cmd_AddCommand(const char* cmdname, void(__cdecl* function)())
 {
     cmd_function_s* cmd = Cmd_FindCommand(cmdname);
@@ -16,14 +19,16 @@ cmd_function_s* Cmd_AddCommand(const char* cmdname, void(__cdecl* function)())
     if (cmd)
         return cmd;
 
+    static int num_cmds = 0;
+
     Com_Printf(CON_CHANNEL_CONSOLEONLY, "adding a new func command: %s\n", cmdname);
     std::cout << "adding new func command: " << cmdname << '\n';
 
-    static cmd_function_s _cmd{};
+    auto* _cmd = &cmds[num_cmds++];
 
     __asm {
         push function;
-        mov edi, offset _cmd;
+        mov edi, _cmd;
         mov eax, cmdname;
         mov esi, 0x530F40;
         call esi;

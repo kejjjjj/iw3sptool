@@ -12,7 +12,8 @@ void CG_Init()
 
     hook::write_addr(0x628948, "\xEB\x00\xBA\x20\x38", 5); //jnz -> jmp
 
-    Cmd_AddCommand("cm_materialFilter", Cmd_MaterialFilter_f);
+    Cmd_AddCommand("cm_showCollisionFilter", Cmd_CollisionFilter_f);
+    Cmd_AddCommand("cm_showEntities", Cmd_ShowEntities_f);
 
     CG_CreatePermaHooks();
 
@@ -41,9 +42,18 @@ void CG_Init()
     v.value = 2000;
     l.value.max = FLT_MAX;
     l.value.min = 0.f;
+    v.enabled = true;
 
     Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
     Dvar_RegisterNew("cm_showCollisionDepthTest", dvar_type::boolean, dvar_flags::saved, "Select whether to use depth test in collision surfaces display", v, l);
+
+    v.enabled = false;
+
+    Dvar_RegisterNew("cm_onlyBounces", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be bounced", v, l);
+    Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be elevated", v, l);
+
+    Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
+
 
     return;
 }

@@ -20,3 +20,4 @@ void BuildFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumP
 void SetPlaneSignbits(cplane_s* out);
 void CreateFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumPlanes);
 //bool PointInFront(const fvec3& origin, const fvec3& target, const cardinalDirection_e d);
+fvec3 SetSurfaceBrightness(const fvec3& color, const fvec3& normal, const fvec3& lightDirection);

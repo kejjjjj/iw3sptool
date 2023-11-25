@@ -34,6 +34,9 @@
     <Filter Include="Source Files\com">
       <UniqueIdentifier>{54eb9f07-a223-4323-a47e-82cf7725b3f4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\g">
+      <UniqueIdentifier>{36363a5e-f623-49dd-9fa5-98659aec35d4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mh\buffer.h">
@@ -120,6 +123,12 @@
     <ClInclude Include="sys_tools.hpp">
       <Filter>Source Files\engine</Filter>
     </ClInclude>
+    <ClInclude Include="g_entity.hpp">
+      <Filter>Source Files\g</Filter>
+    </ClInclude>
+    <ClInclude Include="cm_terrain.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -184,6 +193,12 @@
     </ClCompile>
     <ClCompile Include="sys_tools.cpp">
       <Filter>Source Files\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="g_entity.cpp">
+      <Filter>Source Files\g</Filter>
+    </ClCompile>
+    <ClCompile Include="cm_terrain.cpp">
+      <Filter>Source Files\cm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

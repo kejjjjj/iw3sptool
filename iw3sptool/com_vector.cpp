@@ -211,3 +211,18 @@ void SetPlaneSignbits(cplane_s* out)
 //	}
 //
 //}
+
+
+fvec3 SetSurfaceBrightness(const fvec3& color, const fvec3& normal, const fvec3& lightDirection) {
+	
+	fvec3 normalizedLight = (lightDirection).normalize();
+
+	float dotProduct = normalizedLight.dot(normal);
+
+	float brightnessAdjustment = 1.f - std::max(0.0f, dotProduct);
+	float maxComponent = std::max({ color.x, color.y, color.z });
+	brightnessAdjustment *= maxComponent; 
+
+	return color * brightnessAdjustment;
+
+}

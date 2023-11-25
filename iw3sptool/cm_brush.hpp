@@ -8,6 +8,8 @@ struct sc_winding_t
 	bool is_bounce = false;
 	bool is_elevator = false;
 	fvec3 normals;
+	vec4_t color;
+
 };
 
 struct showcol_brush
@@ -33,8 +35,8 @@ enum class polyType
 
 inline std::vector<showcol_brush> s_brushes;
 
-showcol_brush CM_GetBrushWindings(cbrush_t* brush);
-void Cmd_MaterialFilter_f();
+showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor);
+void Cmd_CollisionFilter_f();
 
 void CM_BuildAxialPlanes(float(*planes)[6][4], const cbrush_t* brush);
 int GetPlaneIntersections(const float** planes, int planeCount, SimplePlaneIntersection* OutPts);
@@ -44,8 +46,9 @@ adjacencyWinding_t* BuildBrushdAdjacencyWindingForSide(int ptCount, SimplePlaneI
 bool PlaneFromPoints(vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c);
 
 void RB_ShowCollision(GfxViewParms* viewParms);
-void RB_RenderWinding(const showcol_brush& sb, polyType poly_type);
+void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_test, float drawdist, bool only_bounces, bool only_elevators);
 bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int numPlanes);
+bool CM_BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frustumPlanes, int numPlanes);
 
 namespace __brush_hook
 {

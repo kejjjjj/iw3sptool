@@ -17,7 +17,7 @@ inline DpvsGlob* dpvsGlob = reinterpret_cast<DpvsGlob*>(0x189A328);
 inline gentity_s* gentities = reinterpret_cast<gentity_s*>(0xC81418);
 inline refdef_s* refdef = (refdef_s*)(0x720080 - 8);
 inline WinMouseVars_t* s_wmv = (WinMouseVars_t*)(0x13E06F0);
-
+inline level_locals_t* level = reinterpret_cast<level_locals_t*>(0xE18E18);
 inline WeaponDef** BG_WeaponNames = reinterpret_cast<WeaponDef**>(0x14227A8);
 
 inline int* bg_lastParsedWeaponIndex = reinterpret_cast<int*>(0x1E20A04);

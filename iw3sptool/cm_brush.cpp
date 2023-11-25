@@ -3,45 +3,61 @@
 fvec3 current_normals;
 showcol_brush current_winding;
 cbrush_t* current_brush = 0;
+vec4_t poly_color;
 
 SimplePlaneIntersection pts[1024];
 SimplePlaneIntersection* pts_results[1024];
 
-void Cmd_MaterialFilter_f()
+void Cmd_CollisionFilter_f()
 {
 	if (cmd_args->argc[cmd_args->nesting] > 2) {
-		Com_Printf(CON_CHANNEL_CONSOLEONLY, "usage: cm_materialFilter <material>\n");
+		Com_Printf(CON_CHANNEL_CONSOLEONLY, "usage: cm_showCollisionFilter <material>\n");
 		return;
 	}
 
 	if (cmd_args->argc[cmd_args->nesting] == 1) {
 
 		if (s_brushes.empty()) {
-			return Com_Printf("there are no brushes to be cleared.. did you intend to use cm_materialFilter <material>?\n");
+			return Com_Printf("there are no brushes to be cleared.. did you intend to use cm_showCollisionFilter <material>?\n");
 		}
 
 		Com_Printf("clearing %i brushes from the render queue\n", s_brushes.size());
 		s_brushes.clear();
+		cm_terrainpoints.clear();
 		return;
 	}
 
 	auto filter = *(cmd_args->argv[cmd_args->nesting] + 1);
 	s_brushes.clear();
+	cm_terrainpoints.clear();
 
 	for (int i = 0; i < cm->numBrushes; i++) {
 
 		char* mat = (cm->materials[cm->brushes[i].axialMaterialNum[0][0]].material);
 
-		if (strstr(mat, filter) == 0)
+		if (strstr(mat, filter) == 0 && strcmp(filter, "all"))
 			continue;
 
-		s_brushes.push_back(CM_GetBrushWindings(&cm->brushes[i]));
+		if (strcmp("clip", filter) == 0 && (strstr(mat, "foliage") || strstr(mat, "water"))) //ignore clip_foliage and clip_water because they're so useless
+			continue;
+
+		s_brushes.push_back(CM_GetBrushWindings(&cm->brushes[i], vec4_t{0,1,0,0.3f}));
 
 	}
+
+	CM_DiscoverTerrain(filter);
+
+	Com_Printf("adding %i brushes and %i terrain pieces to the render queue\n", s_brushes.size(), cm_terrainpoints.size());
+
+
 }
 
-showcol_brush CM_GetBrushWindings(cbrush_t* brush)
+showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor)
 {
+	poly_color[0] = polycolor[0];
+	poly_color[1] = polycolor[1];
+	poly_color[2] = polycolor[2];
+	poly_color[3] = polycolor[3];
 
 	float outPlanes[40][4]{};
 	int planeCount = BrushToPlanes(brush, outPlanes);
@@ -53,6 +69,7 @@ showcol_brush CM_GetBrushWindings(cbrush_t* brush)
 
 	current_winding.windings.clear();
 	current_winding.numVerts = 0;
+	current_winding.brush = brush;
 	current_brush = brush;
 
 	do {
@@ -202,9 +219,16 @@ void __cdecl winding_hook__(adjacencyWinding_t* w, float* a, float* b, float* c,
 	current_winding.windings.push_back({ sc_winding_t{ winding_points } });
 	current_winding.brush = current_brush;
 
-	current_winding.windings.back().is_bounce = current_normals[2] >= 0.3f && current_normals[2] <= 0.7f;
-	current_winding.windings.back().is_elevator = std::fabs(current_normals[0]) == 1.f || std::fabs(current_normals[1]) == 1.f;
-	current_winding.windings.back().normals = current_normals;
+	auto& back = current_winding.windings.back();
+
+	back.is_bounce = current_normals[2] >= 0.3f && current_normals[2] <= 0.7f;
+	back.is_elevator = std::fabs(current_normals[0]) == 1.f || std::fabs(current_normals[1]) == 1.f;
+	back.normals = current_normals;
+
+	fvec3 new_color = SetSurfaceBrightness(poly_color, current_normals, Dvar_FindMalleableVar("r_lightTweakSunDirection")->current.vector);
+
+	VectorCopy(new_color, back.color);
+	back.color[3] = poly_color[3];
 
 }
 
@@ -283,7 +307,9 @@ bool PlaneFromPoints(vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t 
 
 void RB_ShowCollision(GfxViewParms* viewParms)
 {
-	if (s_brushes.empty() /*&& cm_terrainpoints.empty()*/)
+	decltype(auto) ents = gameEntities::getInstance();
+
+	if (s_brushes.empty() && ents.empty() /*&& cm_terrainpoints.empty()*/)
 		return;
 
 	cplane_s frustum_planes[6];
@@ -292,6 +318,11 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 
 	polyType poly_type = static_cast<polyType>(Dvar_FindMalleableVar("cm_showCollisionPolyType")->current.integer);
 	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
+	float draw_dist = Dvar_FindMalleableVar("cm_showCollisionDist")->current.value;
+	bool only_bounces = Dvar_FindMalleableVar("cm_onlyBounces")->current.enabled;
+	bool only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.enabled;
+	bool depth_test = Dvar_FindMalleableVar("cm_showCollisionDepthTest")->current.enabled;
+
 
 	if (collisionType == showCollisionType::DISABLED)
 		return;
@@ -299,8 +330,33 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 	if (collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH) {
 		for (auto& i : s_brushes)
 			if (CM_BrushInView(i.brush, frustum_planes, 5)) {
-				RB_RenderWinding(i, poly_type);
+				RB_RenderWinding(i, poly_type, depth_test, draw_dist, only_bounces, only_elevators);
 			}
+
+		if (only_bounces == false && only_elevators == false) {
+			for (auto& i : ents) {
+
+				switch (i->get_type()) {
+
+				case gentity_type::BRUSHMODEL:
+					dynamic_cast<brushModelEntity*>(i.get())->render(frustum_planes, 5, poly_type, depth_test, draw_dist);
+					break;
+				default:
+					break;
+
+				}
+
+			}
+		}
+	}
+	if (collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH) {
+
+		if (only_elevators == false) {
+			for (auto& i : cm_terrainpoints) {
+				CM_ShowTerrain(&i, frustum_planes, poly_type, depth_test, draw_dist, only_bounces);
+			}
+		}
+
 	}
 
 	//if (find_evar<bool>("Only Elevators")->get() == false) {
@@ -310,17 +366,10 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 	//}
 
 }
-void RB_RenderWinding(const showcol_brush& sb, polyType poly_type)
+void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_test, float drawdist, bool only_bounces, bool only_elevators)
 {
-	if (sb.brush->get_origin().dist(predictedPlayerState->origin) > Dvar_FindMalleableVar("cm_showCollisionDist")->current.value)
+	if (sb.brush->get_origin().dist(predictedPlayerState->origin) > drawdist)
 		return;
-
-	//bool only_bounces = find_evar<bool>("Only Bounces")->get();
-	//bool only_elevators = find_evar<bool>("Only Elevators")->get();
-
-	bool only_bounces = false;
-	bool only_elevators = false;
-	bool depth_test = Dvar_FindMalleableVar("cm_showCollisionDepthTest")->current.enabled;
 
 	for (auto& i : sb.windings) {
 
@@ -331,6 +380,12 @@ void RB_RenderWinding(const showcol_brush& sb, polyType poly_type)
 			continue;
 
 		vec4_t c = { 0,1,1,0.3f };
+
+		c[0] = i.color[0];
+		c[1] = i.color[1];
+		c[2] = i.color[2];
+		c[3] = i.color[3];
+
 
 		if (only_bounces) {
 			float n = i.normals[2];
@@ -362,6 +417,23 @@ bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int n
 	cplane_s* plane = frustumPlanes;
 	int idx = 0;
 	while ((BoxOnPlaneSide(brush->mins, brush->maxs, plane) & 1) != 0) {
+		++plane;
+		++idx;
+
+		if (idx >= numPlanes)
+			return 1;
+	}
+
+	return 0;
+}
+bool CM_BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frustumPlanes, int numPlanes)
+{
+	if (numPlanes <= 0)
+		return 1;
+
+	cplane_s* plane = frustumPlanes;
+	int idx = 0;
+	while ((BoxOnPlaneSide(mins, maxs, plane) & 1) != 0) {
 		++plane;
 		++idx;
 

@@ -109,8 +109,8 @@ struct vec3
 	constexpr vec3() { x = 0; y = 0, z = 0; }
 	constexpr vec3(const T& v) { x = v; y = v, z = v; }
 	constexpr vec3(const T& a, const T& b, const T& c) { x = a; y = b, z = c; }
-	constexpr vec3(const float(*a)[3]) { x = a[0]; y = a[1], z = a[2]; }
-	constexpr vec3(const float *a ) { x = a[0]; y = a[1], z = a[2]; }
+	constexpr vec3(const T(*a)[3]) { x = a[0]; y = a[1], z = a[2]; }
+	constexpr vec3(const T *a ) { x = a[0]; y = a[1], z = a[2]; }
 
 	//constexpr explicit vec3(const vec3<int>& v) { x = (int)v.x, y = (int)v.y; }
 
@@ -172,6 +172,20 @@ struct vec3
 		}
 
 		return length;
+	}
+	vec3 normalize() const  noexcept {
+		vec3 r = *this;
+		const float length = this->mag();
+		float ilength;
+
+		if (length) {
+			ilength = 1 / length;
+			r.x *= ilength;
+			r.y *= ilength;
+			r.z *= ilength;
+		}
+
+		return r;
 	}
 	float dist(const vec3& vec) const noexcept
 	{

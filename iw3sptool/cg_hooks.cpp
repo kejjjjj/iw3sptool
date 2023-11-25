@@ -19,7 +19,7 @@ void CG_CreateHooks()
 
 	hooktable.insert(hookEnums_e::HOOK_BRUSH_ADJACENCY, hook::hookobj<void*>(0x59859C, __brush_hook::stealerino, TRUE));
 
-	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBE21, G_Trigger, TRUE));
+	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 
 
 	std::this_thread::sleep_for(100ms);
