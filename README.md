@@ -7,7 +7,6 @@
 
 ## Notes
 - Only for cod4 singleplayer patch 1.5
-- you MIGHT crash the game if you disconnect when there are a lot of surfaces to draw so I guess clear the render queue first and then disconnect :)
 
 ## Usage
 - The .asi file goes to the "miles" folder located in the cod4 root directory
@@ -15,5 +14,8 @@
 - cm_showCollisionFilter expects the name of a material (e.g. "clip") and using it without an argument will clear the render queue
 - cm_showEntities expects the name of a classname (e.g. "trigger_multiple") and using it without an argument will clear the render queue
 - using the "all" argument on cm_showCollisionFilter and cm_showEntities will select *ALL* relevant items 
+- brushes are highlighted with green
+- terrain is highlighted with blue
+- entities are highlighted with orange
 
 ![image](https://github.com/kejjjjj/iw3sptool/assets/108032666/75698826-97fb-4777-9cd7-b3da8009faf4)
