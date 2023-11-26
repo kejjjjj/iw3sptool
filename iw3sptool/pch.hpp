@@ -131,7 +131,7 @@ typedef vec_t vec4_t[4];
 #include <stdexcept>
 #include <random> // for std::mt19937
 #include <source_location>
-
+#include <unordered_set>
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 

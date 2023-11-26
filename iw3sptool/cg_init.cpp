@@ -73,6 +73,8 @@ void CG_Init()
     Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be elevated", v, l);
 
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
+    Dvar_RegisterNew("cm_entityInfo", dvar_type::boolean, dvar_flags::saved, "Display brushmodel information", v, l);
+
     Dvar_RegisterNew("tool_version", dvar_type::string, dvar_flags::write_protected, date.c_str(), v, l);
 
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);

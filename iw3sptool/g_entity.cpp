@@ -32,12 +32,29 @@ void Cmd_ShowEntities_f()
 void G_DiscoverGentities(level_locals_t* l, const char* classname)
 {
 	rb_requesting_to_stop_rendering = true;
-
 	decltype(auto) ents = gameEntities::getInstance();
 
+	//std::unordered_set<std::string> s;
+
+	//for (int i = 0; i < l->num_entities; i++)
+	//	s.insert(Scr_GetString(l->gentities[i].classname));
+
+	//for (auto& i : s) {
+	//	std::cout << i << '\n';
+	//}
+
+	std::string classname_s;
 	for (int i = 0; i < l->num_entities; i++) {
 
-		if (l->gentities[i].classname != SL_GetStringOfSize(classname) && strcmp(classname, "all"))
+		//if (l->gentities[i].classname) {
+		//	std::cout << "classname: "  << Scr_GetString(l->gentities[i].classname) << '\n';
+		//	std::cout << "targetname: " << Scr_GetString(l->gentities[i].targetname) << '\n';
+		//	std::cout << "target: " << Scr_GetString(l->gentities[i].target) << "\n\n";
+
+		//}
+		classname_s = Scr_GetString(l->gentities[i].classname);
+
+		if (classname_s.contains(classname) == false && strcmp(classname, "all"))
 			continue;
 
 		ents.push_back(&l->gentities[i]);

@@ -17,6 +17,8 @@ void R_AddDebugBox(const float* mins, const float* maxs, DebugGlobals* debugGlob
 void RB_DrawCollisionPoly(int numPoints, float(*points)[3], const float* colorFloat, bool depthtest);
 void RB_DrawCollisionEdges(int numPoints, float(*points)[3], const float* colorFloat, bool depthtest);
 
+//void R_AddDebugBox(const fvec3& mins, const fvec3& maxs ,float* color, polyType poly);
+
 void CM_DrawPoly(Poly* poly, float* color);
 
 HRESULT R_DrawXModelSkinnedCached(GfxCmdBufSourceState* src, GfxCmdBufState* state, GfxModelSkinnedSurface* modelSurf);

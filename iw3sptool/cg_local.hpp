@@ -3332,6 +3332,11 @@ struct cbrush_t
 		return { maxs[0] + (maxs[0] - mins[0]) / 2, maxs[1] + (maxs[1] - mins[1]) / 2, maxs[2] + (maxs[0] - mins[0]) / 2 };
 	}
 };
+struct scrMemTreePub_t
+{
+	char* mt_buffer;
+};
+
 #pragma pack(pop)
 //
 //		/* 861 */

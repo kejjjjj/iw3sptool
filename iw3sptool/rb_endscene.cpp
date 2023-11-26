@@ -211,7 +211,7 @@ void R_AddDebugBox(const float* mins, const float* maxs, DebugGlobals* debugGlob
 		push debugGlobalsEntry;
 		mov edx, maxs;
 		mov eax, mins;
-		mov esi, 0x60DC60;
+		mov esi, 0x5EE720;
 		call esi;
 		add esp, 0x8;
 	}

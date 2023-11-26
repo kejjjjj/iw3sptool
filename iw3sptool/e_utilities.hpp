@@ -8,5 +8,6 @@ cmd_function_s* Cmd_RemoveCommand(const char* cmdname);
 
 unsigned short SL_GetStringOfSize(const char* str);
 
+char* Scr_GetString(int string);
 
 void Cbuf_AddText(const char* text);

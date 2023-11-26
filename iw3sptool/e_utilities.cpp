@@ -61,7 +61,10 @@ void Cbuf_AddText(const char* text)
         add esp, 0x8;
     }
 }
-
+char* Scr_GetString(int string)
+{
+    return (char*)&gScrMemTreePub->mt_buffer[12 * string + 4];
+}
 unsigned short SL_GetStringOfSize(const char* str)
 {
     int Unknown = 1;

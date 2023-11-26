@@ -120,3 +120,19 @@ void R_DrawRect(const char* material, float x, float y, float w, float h, const 
 
 
 }
+void CL_AddDebugString(float* xyz, float* color, float scale, char* text, int duration)
+{
+	static DWORD const addr = 0x43D170;
+	__asm
+	{
+		mov esi, 0;
+		push duration;
+		push text;
+		push scale;
+		push color;
+		push xyz;
+		call addr;
+		add esp, 20;
+
+	}
+}
