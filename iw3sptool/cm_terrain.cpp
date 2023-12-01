@@ -8,13 +8,13 @@ void CM_DiscoverTerrain(const char* filter)
 	}
 }
 
-void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::string& filter)
+void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::string& filter, const vec4_t color)
 {
 
 	if (aabbTree->childCount) {
 		auto child = &cm->aabbTrees[aabbTree->u.firstChildIndex];
 		for (int i = 0; i < aabbTree->childCount; i++) {
-			CM_AdvanceAabbTree(child, terrain, filter);
+			CM_AdvanceAabbTree(child, terrain, filter, color);
 			++child;
 		}
 		return;
@@ -49,7 +49,7 @@ void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const 
 			PlaneFromPoints(tri.plane, tri.a, tri.b, tri.c);
 
 
-			fvec3 col_ = SetSurfaceBrightness({ 0,0.1f,1.f }, tri.plane, Dvar_FindMalleableVar("r_lightTweakSunDirection")->current.vector);
+			const fvec3 col_ = SetSurfaceBrightness(color, tri.plane, Dvar_FindMalleableVar("r_lightTweakSunDirection")->current.vector);
 
 			tri.color[0] = col_[0];
 			tri.color[1] = col_[1];
@@ -77,14 +77,12 @@ void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::string& material_filter)
 		return;
 
 	int aabbIdx = 0;
-	vec3_t a, b, c;
 
 	cm_terrain terrain{};
 	terrain.leaf = leaf;
 	do {
 		CollisionAabbTree* aabb = &cm->aabbTrees[aabbIdx + leaf->firstCollAabbIndex];
-
-		CM_AdvanceAabbTree(aabb, &terrain, material_filter);
+		CM_AdvanceAabbTree(aabb, &terrain, material_filter, vec4_t{0,0.1f,1.f, 0.8f});
 
 		++aabbIdx;
 	} while (aabbIdx < leaf->collAabbCount);
@@ -93,7 +91,27 @@ void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::string& material_filter)
 		cm_terrainpoints.push_back(std::move(terrain));
 
 }
+std::optional<cm_terrain> CM_GetTerrainTriangles(cLeaf_t* leaf, const vec4_t color)
+{
+	if (!leaf)
+		return std::nullopt;
 
+	if (!leaf->collAabbCount)
+		return std::nullopt;
+
+	int aabbIdx = 0;
+
+	cm_terrain terrain{};
+	terrain.leaf = leaf;
+	do {
+		CollisionAabbTree* aabb = &cm->aabbTrees[aabbIdx + leaf->firstCollAabbIndex];
+		CM_AdvanceAabbTree(aabb, &terrain, "all", color);
+		++aabbIdx;
+	} while (aabbIdx < leaf->collAabbCount);
+
+	return terrain.tris.empty() ? std::nullopt : std::make_optional(terrain);
+
+}
 void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyType poly_type, bool depth_test, float drawdist, bool only_bounces)
 {
 	uint8_t col[4];

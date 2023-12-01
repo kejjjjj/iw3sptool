@@ -226,3 +226,83 @@ fvec3 SetSurfaceBrightness(const fvec3& color, const fvec3& normal, const fvec3&
 	return color * brightnessAdjustment;
 
 }
+
+void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up) {
+	float angle;
+	static float sr, sp, sy, cr, cp, cy;
+	// static to help MS compiler fp bugs
+
+	angle = angles[YAW] * (M_PI * 2 / 360);
+	sy = sin(angle);
+	cy = cos(angle);
+
+	angle = angles[PITCH] * (M_PI * 2 / 360);
+	sp = sin(angle);
+	cp = cos(angle);
+
+	angle = angles[ROLL] * (M_PI * 2 / 360);
+	sr = sin(angle);
+	cr = cos(angle);
+
+	if (forward) {
+		forward[0] = cp * cy;
+		forward[1] = cp * sy;
+		forward[2] = -sp;
+	}
+	if (right) {
+		right[0] = (-1 * sr * sp * cy + -1 * cr * -sy);
+		right[1] = (-1 * sr * sp * sy + -1 * cr * cy);
+		right[2] = -1 * sr * cp;
+	}
+	if (up) {
+		up[0] = (cr * sp * cy + -sr * -sy);
+		up[1] = (cr * sp * sy + -sr * cy);
+		up[2] = cr * cp;
+	}
+}
+
+void AnglesToAxis(const vec3_t angles, vec3_t axis[3]) {
+	vec3_t right;
+
+	// angle vectors returns "right" instead of "y axis"
+	AngleVectors(angles, axis[0], right, axis[2]);
+	vec3_t org = { 0,0,0 };
+	VectorSubtract(org, right, axis[1]);
+}
+fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation)
+{
+	fvec3 vWork, va;
+	VectorCopy(vIn, va);
+	VectorCopy(va, vWork);
+	int nIndex[3][2];
+	nIndex[0][0] = 1; nIndex[0][1] = 2;
+	nIndex[1][0] = 2; nIndex[1][1] = 0;
+	nIndex[2][0] = 0; nIndex[2][1] = 1;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (vRotation[i] != 0.000000f)
+		{
+			float dAngle = vRotation[i] * PI / 180.0;
+			float c = cos(dAngle);
+			float s = sin(dAngle);
+			vWork[nIndex[i][0]] = va[nIndex[i][0]] * c - va[nIndex[i][1]] * s;
+			vWork[nIndex[i][1]] = va[nIndex[i][0]] * s + va[nIndex[i][1]] * c;
+		}
+		VectorCopy(vWork, va);
+	}
+
+	return vWork;
+}
+fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation, const fvec3& vOrigin)
+{
+	fvec3 vRotation2 = vRotation;
+	std::swap(vRotation2.y, vRotation2.z);
+	std::swap(vRotation2.x, vRotation2.y);
+
+	fvec3 vTemp;
+	VectorSubtract(vIn, vOrigin, vTemp);
+	fvec3 vTemp2 = VectorRotate(vTemp, vRotation2);
+
+	return vTemp2 + vOrigin;
+}

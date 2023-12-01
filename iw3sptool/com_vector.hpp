@@ -21,3 +21,10 @@ void SetPlaneSignbits(cplane_s* out);
 void CreateFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumPlanes);
 //bool PointInFront(const fvec3& origin, const fvec3& target, const cardinalDirection_e d);
 fvec3 SetSurfaceBrightness(const fvec3& color, const fvec3& normal, const fvec3& lightDirection);
+
+void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
+
+void AnglesToAxis(const vec3_t angles, vec3_t axis[3]);
+
+fvec3 VectorRotate(const fvec3& va, const fvec3& vb);
+fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation, const fvec3& vOrigin);

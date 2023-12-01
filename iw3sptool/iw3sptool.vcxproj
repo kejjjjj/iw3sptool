@@ -151,6 +151,7 @@
     <ClInclude Include="cg_init.hpp" />
     <ClInclude Include="cg_local.hpp" />
     <ClInclude Include="cg_offsets.hpp" />
+    <ClInclude Include="cg_view.hpp" />
     <ClInclude Include="cl_main.hpp" />
     <ClInclude Include="cm_brush.hpp" />
     <ClInclude Include="cm_terrain.hpp" />
@@ -181,6 +182,7 @@
   <ItemGroup>
     <ClCompile Include="cg_hooks.cpp" />
     <ClCompile Include="cg_init.cpp" />
+    <ClCompile Include="cg_view.cpp" />
     <ClCompile Include="cl_main.cpp" />
     <ClCompile Include="cm_brush.cpp" />
     <ClCompile Include="cm_terrain.cpp" />

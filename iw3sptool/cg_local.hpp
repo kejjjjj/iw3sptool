@@ -1248,9 +1248,9 @@ inline const char* WEAPON_ANIMS[30] {
 struct playerState_s
 {
 	int commandTime;
-	int pm_type;
+	pmtype_t pm_type;
 	int bobCycle;
-	int pm_flags;
+	pmflags_t pm_flags;
 	int weapFlags;
 	int otherFlags;
 	int pm_time;
@@ -1272,15 +1272,6 @@ struct playerState_s
 	float vLadderVec[3];
 	int jumpTime;
 	float jumpOriginZ;
-	int legsTimer;
-	int legsAnim;
-	int torsoTimer;
-	int torsoAnim;
-	int legsAnimDuration;
-	int torsoAnimDuration;
-	int damageTimer;
-	int damageDuration;
-	int flinchYawAnim;
 	int movementDir;
 	int eFlags;
 	int eventSequence;
@@ -1291,7 +1282,7 @@ struct playerState_s
 	int offHandIndex;
 	OffhandSecondaryClass offhandSecondary;
 	unsigned int weapon;
-	int weaponstate;
+	weaponstate_t weaponstate;
 	unsigned int weaponShotCount;
 	float fWeaponPosFrac;
 	int adsDelayTime;
@@ -1310,12 +1301,13 @@ struct playerState_s
 	int damageYaw;
 	int damagePitch;
 	int damageCount;
-	int stats[5];
+	int stats[4];
 	int ammo[128];
 	int ammoclip[128];
-	unsigned int weapons[4];
 	unsigned int weaponold[4];
-	unsigned int weaponrechamber[4];
+	unsigned int weapons[4];
+	unsigned int weaponchamber[3];
+	int stats_;
 	float proneDirection;
 	float proneDirectionPitch;
 	float proneTorsoPitch;
@@ -1327,6 +1319,7 @@ struct playerState_s
 	int iCompassPlayerInfo;
 	int radarEnabled;
 	int locationSelectionInfo;
+	int pad00[5];
 	SprintState sprintState;
 	float fTorsoPitch;
 	float fWaistPitch;
@@ -1338,6 +1331,7 @@ struct playerState_s
 	int meleeChargeDist;
 	int meleeChargeTime;
 	int perks;
+	int _pad[4];
 	ActionSlotType actionSlotType[4];
 	ActionSlotParam actionSlotParam[4];
 	int entityEventSequence;
@@ -1360,7 +1354,9 @@ struct playerState_s
 	int deltaTime;
 	int killCamEntity;
 	$15067B6A14D88D7E1E730369692C3A81 hud;
+	char padding[33656];
 };
+
 enum statIndex_t
 {
 	STAT_HEALTH = 0x0,
@@ -6765,169 +6761,12 @@ struct hudElemSoundInfo_t
 
 struct cg_s
 {
-	int clientNum;
-	int localClientNum;
-	DemoType demoType;
-	CubemapShot cubemapShot;
-	int cubemapSize;
-	int renderScreen;
-	int latestSnapshotNum;
-	int latestSnapshotTime;
-	snapshot_s* snap;
-	snapshot_s* nextSnap;
-	snapshot_s activeSnapshots[2];
-	float frameInterpolation;
-	int frametime;
-	int time;
-	int oldTime;
-	int physicsTime;
-	int mapRestart;
-	int renderingThirdPerson;
+	char padding1[0x714BA8 - 0x6FA590]; 
 	playerState_s predictedPlayerState;
-	centity_s predictedPlayerEntity;
-	playerEntity_t playerEntity;
-	int predictedErrorTime;
-	float predictedError[3];
-	float landChange;
-	int landTime;
-	float heightToCeiling;
+	char padding2[0x720078 - 0x714BA8 - sizeof(playerState_s)]; 
 	refdef_s refdef;
 	float refdefViewAngles[3];
-	float lastVieworg[3];
-	float swayViewAngles[3];
-	float swayAngles[3];
-	float swayOffset[3];
-	int iEntityLastType[1024];
-	XModel* pEntityLastXModel[1024];
-	float zoomSensitivity;
-	bool isLoading;
-	char objectiveText[1024];
-	char scriptMainMenu[256];
-	int scoresRequestTime;
-	int numScores;
-	int teamScores[4];
-	int teamPings[4];
-	int teamPlayers[4];
-	score_t scores[64];
-	int scoreLimit;
-	int showScores;
-	int scoreFadeTime;
-	int scoresTop;
-	int scoresOffBottom;
-	int scoresBottom;
-	int drawHud;
-	int crosshairClientNum;
-	int crosshairClientLastTime;
-	int crosshairClientStartTime;
-	int identifyClientNum;
-	int cursorHintIcon;
-	int cursorHintTime;
-	int cursorHintFade;
-	int cursorHintString;
-	int lastClipFlashTime;
-	InvalidCmdHintType invalidCmdHintType;
-	int invalidCmdHintTime;
-	int lastHealthPulseTime;
-	int lastHealthLerpDelay;
-	int lastHealthClient;
-	float lastHealth;
-	float healthOverlayFromAlpha;
-	float healthOverlayToAlpha;
-	int healthOverlayPulseTime;
-	int healthOverlayPulseDuration;
-	int healthOverlayPulsePhase;
-	bool healthOverlayHurt;
-	int healthOverlayLastHitTime;
-	float healthOverlayOldHealth;
-	int healthOverlayPulseIndex;
-	int proneBlockedEndTime;
-	int lastStance;
-	int lastStanceChangeTime;
-	int lastStanceFlashTime;
-	int voiceTime;
-	unsigned int weaponSelect;
-	int weaponSelectTime;
-	unsigned int weaponLatestPrimaryIdx;
-	int prevViewmodelWeapon;
-	int equippedOffHand;
-	viewDamage_t viewDamage[8];
-	int damageTime;
-	float damageX;
-	float damageY;
-	float damageValue;
-	float viewFade;
-	int weapIdleTime;
-	int nomarks;
-	int v_dmg_time;
-	float v_dmg_pitch;
-	float v_dmg_roll;
-	float fBobCycle;
-	float xyspeed;
-	float kickAVel[3];
-	float kickAngles[3];
-	float offsetAngles[3];
-	float gunPitch;
-	float gunYaw;
-	float gunXOfs;
-	float gunYOfs;
-	float gunZOfs;
-	float vGunOffset[3];
-	float vGunSpeed[3];
-	float viewModelAxis[4][3];
-	float rumbleScale;
-	float compassNorthYaw;
-	float compassNorth[2];
-	Material* compassMapMaterial;
-	float compassMapUpperLeft[2];
-	float compassMapWorldSize[2];
-	int compassFadeTime;
-	int healthFadeTime;
-	int ammoFadeTime;
-	int stanceFadeTime;
-	int sprintFadeTime;
-	int offhandFadeTime;
-	int offhandFlashTime;
-	shellshock_t shellshock;
-	$F6DFD6D87F75480A1EF1906639406DF5 testShock;
-	int holdBreathTime;
-	int holdBreathInTime;
-	int holdBreathDelay;
-	float holdBreathFrac;
-	float radarProgress;		// correct offset
-	float selectedLocation[2];
-	SprintState sprintStates;	// 5 ints
-
-	//int packetAnalysisFrameCount;
-	//char bitsSent[100][13];
-	//int entBitsUsed[10][18];
-	//int numEntsSent[10][18];
-	//int numEntFields[10][18]; ?? // 7 inbetween selectedLocation and bgs
-	//int numSnapshots;
-	//int adsViewErrorDone;
-	//int inKillCam;
-
-	int _unk01;
-	int _unk02;
-
-	bgs_t bgs;	// first name root
-	cpose_t viewModelPose;
-	visionSetVars_t visionSetPreLoaded[4];
-	char visionSetPreLoadedName[4][64];
-	visionSetVars_t visionSetFrom[2];
-	visionSetVars_t visionSetTo[2];
-	visionSetVars_t visionSetCurrent[2];
-	visionSetLerpData_t visionSetLerpData[2];
-	char visionNameNaked[64];
-	char visionNameNight[64];
-	int extraButtons;
-	int lastActionSlotTime;
-	bool playerTeleported;
-	int stepViewStart;
-	float stepViewChange;
-	$BE9F66374A020A9809EEAF403416A176 lastFrame;
-	hudElemSoundInfo_t hudElemSound[32];
-	int vehicleFrame;
-}; // should be right
+};
 
 struct trigger_info_t
 {

@@ -22,4 +22,6 @@ inline WeaponDef** BG_WeaponNames = reinterpret_cast<WeaponDef**>(0x14227A8);
 inline scrMemTreePub_t* gScrMemTreePub = reinterpret_cast<scrMemTreePub_t*>(0xFDBBC4);
 inline int* bg_lastParsedWeaponIndex = reinterpret_cast<int*>(0x1E20A04);
 
+inline cg_s* cgs = reinterpret_cast<cg_s*>(0x6FA590);
+
 inline clientUIActive_t* clientUI = reinterpret_cast<clientUIActive_t*>(0x85BD70);

@@ -15,6 +15,7 @@
 - cm_showEntities expects the name of a classname (e.g. "trigger_multiple") and using it without an argument will clear the render queue
 - using the "all" argument on cm_showCollisionFilter and cm_showEntities will select *ALL* relevant items 
 - brushes are highlighted with green
+- terrain brushmodels are highlighted with purple
 - terrain is highlighted with blue
 - entities are highlighted with orange
 - spawners are highlighted with red

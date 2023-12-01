@@ -129,6 +129,9 @@
     <ClInclude Include="cm_terrain.hpp">
       <Filter>Source Files\cm</Filter>
     </ClInclude>
+    <ClInclude Include="cg_view.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -199,6 +202,9 @@
     </ClCompile>
     <ClCompile Include="cm_terrain.cpp">
       <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cg_view.cpp">
+      <Filter>Source Files\cg</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

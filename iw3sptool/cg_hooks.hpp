@@ -14,7 +14,9 @@ enum class hookEnums_e : short
 
 
 	HOOK_BRUSH_ADJACENCY,
-	G_TRIGGER
+	G_TRIGGER,
+	HOOK_FIRSTPERSON,
+	HOOK_THIRDPERSON
 
 };
 

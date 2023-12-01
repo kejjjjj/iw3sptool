@@ -59,7 +59,8 @@ struct cm_terrain
 void CM_DiscoverTerrain(const char* filter);
 
 void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::string& material_filter);
-void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::string& filter);
+void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::string& filter, const vec4_t color);
+std::optional<cm_terrain> CM_GetTerrainTriangles(cLeaf_t* leaf, const vec4_t color);
 
 
 

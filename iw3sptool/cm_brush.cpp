@@ -347,25 +347,6 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 			if (CM_BrushInView(i.brush, frustum_planes, 5)) {
 				RB_RenderWinding(i, poly_type, depth_test, draw_dist, only_bounces, only_elevators);
 			}
-
-		if (only_bounces == false && only_elevators == false) {
-			for (auto& i : ents) {
-
-				switch (i->get_type()) {
-
-				case gentity_type::BRUSHMODEL:
-					dynamic_cast<brushModelEntity*>(i.get())->render(frustum_planes, 5, poly_type, depth_test, draw_dist);
-					break;
-				case gentity_type::SPAWNER:
-					dynamic_cast<spawnerEntity*>(i.get())->render(frustum_planes, 5, poly_type, depth_test, draw_dist);
-					break;
-				default:
-					break;
-
-				}
-
-			}
-		}
 	}
 	if (collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH) {
 
@@ -375,6 +356,13 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 			}
 		}
 
+	}
+	if (only_bounces == false && only_elevators == false) {
+		for (auto& i : ents) {
+
+			i.get()->render(frustum_planes, 5, poly_type, depth_test, draw_dist);
+
+		}
 	}
 
 
@@ -463,24 +451,55 @@ bool CM_BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frus
 }
 std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& size)
 {
-	float halfSizeX = size.x / 2.0f;
-	float halfSizeY = size.y / 2.0f;
-	float halfSizeZ = size.z / 2.0f;
+	std::vector<fvec3> vertices;
 
-	std::vector<fvec3> vertices = {
-		{-halfSizeX, -halfSizeY, -halfSizeZ}, // 0
-		{halfSizeX, -halfSizeY, -halfSizeZ},  // 1
-		{halfSizeX, halfSizeY, -halfSizeZ},   // 2
-		{-halfSizeX, halfSizeY, -halfSizeZ},  // 3
-		{-halfSizeX, -halfSizeY, halfSizeZ},  // 4
-		{halfSizeX, -halfSizeY, halfSizeZ},   // 5
-		{halfSizeX, halfSizeY, halfSizeZ},    // 6
-		{-halfSizeX, halfSizeY, halfSizeZ}    // 7
-	};
+	// Define the eight vertices of the cube
+	fvec3 v0 = origin;
+	fvec3 v1 = origin + fvec3(size.x, 0, 0);
+	fvec3 v2 = origin + fvec3(size.x, size.y, 0);
+	fvec3 v3 = origin + fvec3(0, size.y, 0);
 
-	for (auto& i : vertices) {
-		i += origin;
-	}
+	fvec3 v4 = origin + fvec3(0, 0, size.z);
+	fvec3 v5 = origin + fvec3(size.x, 0, size.z);
+	fvec3 v6 = origin + fvec3(size.x, size.y, size.z);
+	fvec3 v7 = origin + fvec3(0, size.y, size.z);
+
+	// Order the vertices for the lines
+	vertices.push_back(v0);
+	vertices.push_back(v1);
+
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+
+	vertices.push_back(v3);
+	vertices.push_back(v0);
+
+	vertices.push_back(v4);
+	vertices.push_back(v5);
+
+	vertices.push_back(v5);
+	vertices.push_back(v6);
+
+	vertices.push_back(v6);
+	vertices.push_back(v7);
+
+	vertices.push_back(v7);
+	vertices.push_back(v4);
+
+	vertices.push_back(v0);
+	vertices.push_back(v4);
+
+	vertices.push_back(v1);
+	vertices.push_back(v5);
+
+	vertices.push_back(v2);
+	vertices.push_back(v6);
+
+	vertices.push_back(v3);
+	vertices.push_back(v7);
 
 	return vertices;
 }

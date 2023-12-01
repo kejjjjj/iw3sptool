@@ -183,7 +183,7 @@ char RB_DrawDebug(GfxViewParms* viewParms)
 	decltype(auto) detour_func = find_hook(hookEnums_e::HOOK_RB_ENDSCENE);
 
 	RB_ShowCollision(viewParms);
-
+	RB_RenderPlayerHitboxes();
 
 	return detour_func.cast_call<char(*)(GfxViewParms*)>(viewParms);
 }

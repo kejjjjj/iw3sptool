@@ -157,6 +157,7 @@ typedef vec_t vec4_t[4];
 
 #include "cg_init.hpp"
 #include "cg_hooks.hpp"
+#include "cg_view.hpp"
 
 #include "cl_main.hpp"
 

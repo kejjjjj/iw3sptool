@@ -58,13 +58,15 @@ void CG_Init()
     v.value = 2000;
     l.value.max = FLT_MAX;
     l.value.min = 0.f;
+
+    Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
+
     v.enabled = true;
 
     static std::string date = std::string(__DATE__) + " - " + std::string(__TIME__);
 
     v.string = "\0";
 
-    Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
     Dvar_RegisterNew("cm_showCollisionDepthTest", dvar_type::boolean, dvar_flags::saved, "Select whether to use depth test in collision surfaces display", v, l);
 
     v.enabled = false;
@@ -75,10 +77,24 @@ void CG_Init()
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
     Dvar_RegisterNew("cm_entityInfo", dvar_type::boolean, dvar_flags::saved, "Display brushmodel information", v, l);
 
+    v.string = date.c_str();
     Dvar_RegisterNew("tool_version", dvar_type::string, dvar_flags::write_protected, date.c_str(), v, l);
 
-    //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
+    Dvar_RegisterNew("cg_thirdPerson", dvar_type::boolean, dvar_flags::none, "Use third person view", v, l);
 
+    l.value.min = -180;
+    l.value.max = 360;
+    v.value = 0;
+
+    Dvar_RegisterNew("cg_thirdPersonAngle", dvar_type::value, dvar_flags::none, "The angle of the camera from the player in third person view", v, l);
+
+    l.value.min = 0;
+    l.value.max = 1024;
+    v.value = 120;
+
+    Dvar_RegisterNew("cg_thirdPersonRange", dvar_type::value, dvar_flags::none, "The range of the camera from the player in third person view", v, l);
+
+    //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 
     return;
 }

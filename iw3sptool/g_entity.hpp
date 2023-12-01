@@ -26,7 +26,7 @@ public:
 
 	};
 
-	bool valid_entity() const noexcept { return g != nullptr; }
+	virtual bool valid_entity() const noexcept { return g != nullptr; }
 	bool is_brush_model() const noexcept  { return valid_entity() && g->r.bmodel; }
 
 	fvec3 get_origin() const noexcept { return *origin; }
@@ -35,6 +35,7 @@ public:
 	static std::unique_ptr<gameEntity> createEntity(gentity_s* gent);
 
 	virtual gentity_type get_type() const = 0;
+	virtual void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
 
 protected:
 	gentity_s* g = 0;
@@ -54,75 +55,76 @@ public:
 		auto& leafBrushNode = cm->leafbrushNodes[leaf->leafBrushNode];
 		short numBrushes = leafBrushNode.leafBrushCount;
 	
-		if (numBrushes < 1)
-			return;
+		//a brush
+		if (numBrushes >= 1) {
+			for (short i = 0; i < numBrushes; i++) {
+				uint16_t brushIdx = leafBrushNode.data.leaf.brushes[i];
 
-		uint16_t brushIdx = leafBrushNode.data.leaf.brushes[0];
+				if (brushIdx >= cm->numBrushes)
+					return;
 
-		if (brushIdx >= cm->numBrushes)
-			return;
+				brushmodel bmodel(g);
 
-		linked_brush = &cm->brushes[brushIdx];
-		brush_geometry = CM_GetBrushWindings(linked_brush, vec4_t{ 0.984f, 0.494f, 0.004f, 0.3f });
-		original_geometry = brush_geometry;
-		//og_mins = linked_brush->mins;
-		//og_maxs = linked_brush->maxs;
+				bmodel.linked_brush = &cm->brushes[brushIdx];
+				bmodel.brush_geometry = CM_GetBrushWindings(bmodel.linked_brush, vec4_t{ 0.984f, 0.494f, 0.004f, 0.3f });
+				bmodel.original_geometry = bmodel.brush_geometry;
+
+				brushmodels.push_back(std::move(std::make_unique<brushmodel>(bmodel)));
+			}
+		}
+		if (const auto t = CM_GetTerrainTriangles(leaf, vec4_t{1,0,1,1})) {
+			terrainmodel tm(g);
+
+			tm.leaf = leaf;
+			tm.terrain = t.value();
+			tm.original_terrain = tm.terrain;
+			
+			brushmodels.push_back(std::move(std::make_unique<terrainmodel>(tm)));
+		}
 
 	}
-	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) {
+	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
 
-		if (brush_geometry.brush == nullptr)
-			return;
-
+		const showCollisionType cm_type = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 		if (*origin != oldOrigin || *orientation != oldOrientation) {
-			brush_geometry = original_geometry;
 
-			//VectorCopy(og_mins, linked_brush->mins);
-			//VectorCopy(og_maxs, linked_brush->maxs);
-
-			brush_geometry.origin += *origin;
-			//linked_brush->mins[0] += origin->x;
-			//linked_brush->mins[1] += origin->y;
-			//linked_brush->mins[2] += origin->z;
-
-			//linked_brush->maxs[0] += origin->x;
-			//linked_brush->maxs[1] += origin->y;
-			//linked_brush->maxs[2] += origin->z;
-			
-
-
-			//if ((Dvar_FindMalleableVar("cm_experimental")->current.enabled && g->classname == SL_GetStringOfSize("script_brushmodel")) == false) {
-
-				for (auto& winding : brush_geometry.windings) {
-					for (auto& w : winding.points) {
-						w.x += origin->x;
-						w.y += origin->y;
-						w.z += origin->z;
-					}
-				}
-			//}
-			
+			for (auto& b : brushmodels) {
+				b->on_position_changed(*origin, *orientation);
+			}
 
 			oldOrigin = *origin;
 			oldOrientation = *orientation;
 		}
 
-		fvec3 mins = *origin + fvec3(linked_brush->mins);
-		fvec3 maxs = *origin + fvec3(linked_brush->maxs);
-		
-		fvec3 center = mins + (maxs - mins) / 2;
+		for (auto& b : brushmodels) {
 
-		static std::string str1;
-		static std::string str2;
-		static std::string str3;
+			if (b->get_type() == brushmodel_type::BRUSH && cm_type == showCollisionType::TERRAIN ||
+				b->get_type() == brushmodel_type::TERRAIN && cm_type == showCollisionType::BRUSHES)
+				continue;
 
+			b->render(*origin, frustum_planes, numPlanes, poly_type, depth_test, drawdist);
+		}
+		for (auto& b : brushmodels) {
 
-		float Z_offset = 0.f;
+			const auto base = b.get();
 
-		if (CM_BoundsInView(mins, maxs, frustum_planes, numPlanes)) {
+			if (cm_type != showCollisionType::BOTH) {
+				if (base->get_type() == brushmodel_type::BRUSH && cm_type != showCollisionType::BRUSHES)
+					return;
+				else if (base->get_type() == brushmodel_type::TERRAIN && cm_type != showCollisionType::TERRAIN) {
+					return;
+				}
+			}
+
 
 			if (Dvar_FindMalleableVar("cm_entityInfo")->current.enabled) {
-				if (brush_geometry.origin.dist(predictedPlayerState->origin) > drawdist)
+				static std::string str1;
+				static std::string str2;
+				static std::string str3;
+				float Z_offset = 0.f;
+				const fvec3 center = b.get()->get_center();
+
+				if (center.dist(predictedPlayerState->origin) > drawdist)
 					return;
 
 				if (g->classname) {
@@ -149,35 +151,121 @@ public:
 					fvec3 n = center;
 					n.z -= Z_offset;
 					CL_AddDebugString(n, vec4_t{ 1,1,1,1 }, .5f, (char*)str3.c_str(), 2);
-
-
-
 				}
 			}
-			RB_RenderWinding(brush_geometry, poly_type, depth_test, drawdist, false, false);
-		}
 
+		}
 
 	}
 	gentity_type get_type() const override
 	{
 		return gentity_type::BRUSHMODEL;
 	}
-
-	void restore_original_state() 
-	{
-		if (!linked_brush)
-			return;
-
-		//VectorCopy(og_mins, linked_brush->mins);
-		//VectorCopy(og_maxs, linked_brush->maxs);
-	}
+	bool valid_entity() const noexcept override { return g != nullptr && brushmodels.empty() == false; }
 
 private:
-	cbrush_t* linked_brush = 0;
-	showcol_brush brush_geometry;
-	showcol_brush original_geometry;
-	fvec3 og_mins, og_maxs;
+
+	enum class brushmodel_type
+	{
+		BRUSH,
+		TERRAIN
+	};
+
+	struct brushmodelbase
+	{
+		brushmodelbase(gentity_s* gent) : g(gent){}
+		~brushmodelbase() = default;
+		virtual brushmodel_type get_type() const noexcept = 0;
+		virtual void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
+		virtual void on_position_changed(const fvec3& origin, const fvec3& orientation) noexcept(true) = 0;
+		virtual fvec3 get_center() const noexcept(true) = 0;
+
+	protected:
+		gentity_s* g;
+	};
+
+	struct brushmodel : public brushmodelbase {
+		brushmodel(gentity_s* gent) : brushmodelbase(gent) {};
+		cbrush_t* linked_brush = 0;
+		showcol_brush brush_geometry;
+		showcol_brush original_geometry;
+		brushmodel_type get_type() const noexcept override { return brushmodel_type::BRUSH; }
+		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
+
+			if (brush_geometry.brush == nullptr)
+				return;
+
+			fvec3 mins = origin + fvec3(linked_brush->mins);
+			fvec3 maxs = origin + fvec3(linked_brush->maxs);
+
+			if (brush_geometry.origin.dist(predictedPlayerState->origin) > drawdist)
+				return;
+
+			if (CM_BoundsInView(mins, maxs, frustum_planes, numPlanes)) {
+				RB_RenderWinding(brush_geometry, poly_type, depth_test, drawdist, false, false);
+
+			}
+		}
+
+		void on_position_changed(const fvec3& origin, const fvec3& delta_angles) noexcept(true) override {
+			brush_geometry = original_geometry;
+			brush_geometry.origin = origin;
+
+			for (auto& winding : brush_geometry.windings) {
+				for (auto& w : winding.points) {
+					w += origin;
+					
+					w = VectorRotate(w, delta_angles, brush_geometry.origin);
+				}
+			}
+		}
+		fvec3 get_center() const noexcept(true) override {
+			return g->r.currentOrigin;
+			//const fvec3 mins = brush_geometry.origin + fvec3(linked_brush->mins);
+			//const fvec3 maxs = brush_geometry.origin + fvec3(linked_brush->maxs);
+			//return  mins + (maxs - mins) / 2;
+
+		}
+	};
+	struct terrainmodel : public brushmodelbase {
+		cLeaf_t* leaf;
+		cm_terrain terrain;
+		cm_terrain original_terrain;
+		terrainmodel(gentity_s* gent) : brushmodelbase(gent) {};
+
+		brushmodel_type get_type() const noexcept override { return brushmodel_type::TERRAIN; }
+
+		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
+			CM_ShowTerrain(&terrain, frustum_planes, poly_type, depth_test, drawdist, false);
+		}
+		void on_position_changed(const fvec3& origin, const fvec3& delta_angles) noexcept(true) override {
+			terrain = original_terrain;
+
+			for (auto& t : terrain.tris) {
+				t.a += origin;
+				t.b += origin;
+				t.c += origin;
+
+				fvec3 c = g->r.currentOrigin;
+
+				t.a = VectorRotate(t.a, delta_angles, c);
+				t.b = VectorRotate(t.b, delta_angles, c);
+				t.c = VectorRotate(t.c, delta_angles, c);
+
+			}
+		}
+		fvec3 get_center() const noexcept(true) override {
+			return g->r.currentOrigin;
+			//auto& front = terrain.tris.front();
+
+			//const fvec3 mins = front.get_mins();
+			//const fvec3 maxs = front.get_maxs();
+
+			//return  mins + (maxs - mins) / 2;
+
+		}
+	};
+	std::vector<std::unique_ptr<brushmodelbase>> brushmodels;
 
 };
 
@@ -186,8 +274,9 @@ class spawnerEntity : public gameEntity
 public:
 	spawnerEntity(gentity_s* gent) : gameEntity(gent) {
 
-
-		geometry = CM_CreateCube(*origin, { 32, 32, 72 });
+		fvec3 copy = *origin;
+		copy.z += 36;
+		geometry = CM_CreateSphere(copy, 1.f, 5, 5, { 16,16,36 });
 
 	}
 
@@ -196,7 +285,7 @@ public:
 		return gentity_type::SPAWNER;
 	}
 
-	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) {
+	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
 
 		if (*origin != oldOrigin || *orientation != oldOrientation) {
 			
@@ -224,7 +313,7 @@ public:
 
 private:
 
-	gentity_s* g;
+	gentity_s* g = 0;
 	std::vector<fvec3> geometry;
 };
 
@@ -254,15 +343,6 @@ public:
 			
 			switch (e->get_type()) {
 			case gentity_type::BRUSHMODEL:
-
-
-				bmodel = dynamic_cast<brushModelEntity*>(e.get());
-
-				if(bmodel)
-					bmodel->restore_original_state();
-				else {
-					Com_Printf("^1what the actual fuck\n");
-				}
 				break;
 			default:
 				break;
@@ -298,7 +378,8 @@ private:
 
 inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 	if (gent->r.bmodel) {
-		return std::move(std::make_unique<brushModelEntity>(gent));
+		std::unique_ptr<brushModelEntity>&& bmodel = std::move(std::make_unique<brushModelEntity>(gent));
+		return bmodel->valid_entity() ? std::move(bmodel) : nullptr;
 	}
 	else if (std::string(Scr_GetString(gent->classname)).find("actor_") != std::string::npos) {
 		return std::move(std::make_unique<spawnerEntity>(gent));
