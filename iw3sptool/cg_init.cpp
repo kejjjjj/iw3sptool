@@ -80,6 +80,8 @@ void CG_Init()
     v.string = date.c_str();
     Dvar_RegisterNew("tool_version", dvar_type::string, dvar_flags::write_protected, date.c_str(), v, l);
 
+    v.enabled = false;
+
     Dvar_RegisterNew("cg_thirdPerson", dvar_type::boolean, dvar_flags::none, "Use third person view", v, l);
 
     l.value.min = -180;
