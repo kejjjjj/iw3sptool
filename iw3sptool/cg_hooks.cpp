@@ -15,13 +15,21 @@ void CG_CreateHooks()
 	decltype(auto) hooktable = HookTable::getInstance();
 
 
-	//hooktable.insert(hookEnums_e::HOOK_DRAWACTIVE,			hook::hookobj<void*>(0x4111D0, CG_DrawActive, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_DRAWACTIVE,			hook::hookobj<void*>(0x4111D0, CG_DrawActive, TRUE));
 	hooktable.insert(hookEnums_e::HOOK_RB_ENDSCENE,			hook::hookobj<void*>(0x636D30, RB_DrawDebug, TRUE));
 
 	hooktable.insert(hookEnums_e::HOOK_BRUSH_ADJACENCY, hook::hookobj<void*>(0x59859C, __brush_hook::stealerino, TRUE));
 
 	hooktable.insert(hookEnums_e::HOOK_FIRSTPERSON, hook::hookobj<void*>(0x42DB30, CG_OffsetFirstPersonView, TRUE));
 	hooktable.insert(hookEnums_e::HOOK_THIRDPERSON, hook::hookobj<void*>(0x42ED10, CG_OffsetThirdPersonViewASM, TRUE));
+
+	hooktable.insert(hookEnums_e::HOOK_G_FREE_ENTITY, hook::hookobj<void*>(0x4EFF90, G_FreeEntityASM, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_G_FREE_ENTITY2, hook::hookobj<void*>(0x4F029B, G_FreeEntityASM2, TRUE));
+
+	hooktable.insert(hookEnums_e::HOOK_SV_LINKENTITY1, hook::hookobj<void*>(0x4EFDCA, G_SpawnASM, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_SV_LINKENTITY2, hook::hookobj<void*>(0x4EFD9A, G_SpawnASM2, TRUE));
+
+	hooktable.insert(hookEnums_e::HOOK_LOADGAME, hook::hookobj<void*>(0x5C4EC0, G_LoadGame_f, TRUE));
 
 	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 

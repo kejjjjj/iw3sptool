@@ -385,7 +385,8 @@ void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_te
 		c[0] = i.color[0];
 		c[1] = i.color[1];
 		c[2] = i.color[2];
-		c[3] = i.color[3];
+		//c[3] = i.color[3];
+		c[3] = Dvar_FindMalleableVar("cm_showCollisionPolyAlpha")->current.value;
 
 
 		if (only_bounces) {

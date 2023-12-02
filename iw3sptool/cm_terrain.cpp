@@ -134,7 +134,7 @@ void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyTyp
 
 		float* c = it->color;
 
-
+		c[3] = Dvar_FindMalleableVar("cm_showCollisionPolyAlpha")->current.value;
 
 		if (only_bounces) {
 			float n = it->plane[2];

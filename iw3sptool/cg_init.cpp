@@ -61,11 +61,14 @@ void CG_Init()
 
     Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
 
+    v.value = 0.8f;
+    l.value.max = 1.f;
+    l.value.min = 0.f;
+    Dvar_RegisterNew("cm_showCollisionPolyAlpha", dvar_type::value, dvar_flags::saved, "Collision transparency", v, l);
+
     v.enabled = true;
 
     static std::string date = std::string(__DATE__) + " - " + std::string(__TIME__);
-
-    v.string = "\0";
 
     Dvar_RegisterNew("cm_showCollisionDepthTest", dvar_type::boolean, dvar_flags::saved, "Select whether to use depth test in collision surfaces display", v, l);
 

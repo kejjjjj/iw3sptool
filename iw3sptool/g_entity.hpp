@@ -11,6 +11,16 @@ enum class gentity_type
 
 void G_DiscoverGentities(level_locals_t* l, const char* classname);
 void Cmd_ShowEntities_f();
+void G_FreeEntity(gentity_s* gent);
+void G_FreeEntityASM();
+void G_FreeEntityASM2();
+
+void G_Spawn(gentity_s* gent);
+void G_SpawnASM();
+void G_SpawnASM2();
+
+void G_LoadGame_f();
+
 
 class gameEntity
 {
@@ -33,7 +43,7 @@ public:
 	fvec3 get_angles() const noexcept { return *orientation; }
 
 	static std::unique_ptr<gameEntity> createEntity(gentity_s* gent);
-
+	static bool is_supported_entity(gentity_s* g) { return createEntity(g).get(); }
 	virtual gentity_type get_type() const = 0;
 	virtual void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
 
@@ -349,7 +359,8 @@ public:
 			}
 
 		}
-
+		freed_entities = 0;
+		spawned_entities = 0;
 		entities.clear();
 	
 	}
@@ -367,6 +378,10 @@ public:
 		return entities[idx];
 	}
 
+	int freed_entities = 0;
+	int spawned_entities = 0;
+	DWORD time_since_loadgame = 0;
+	bool it_is_ok_to_load_entities = true;
 private:
 
 
@@ -377,6 +392,10 @@ private:
 };
 
 inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
+
+	if (gameEntities::getInstance().it_is_ok_to_load_entities == false)
+		return nullptr;
+
 	if (gent->r.bmodel) {
 		std::unique_ptr<brushModelEntity>&& bmodel = std::move(std::make_unique<brushModelEntity>(gent));
 		return bmodel->valid_entity() ? std::move(bmodel) : nullptr;
