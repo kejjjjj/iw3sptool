@@ -61,7 +61,7 @@ void CG_Init()
 
     Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
 
-    v.value = 0.8f;
+    v.value = 0.5f;
     l.value.max = 1.f;
     l.value.min = 0.f;
     Dvar_RegisterNew("cm_showCollisionPolyAlpha", dvar_type::value, dvar_flags::saved, "Collision transparency", v, l);

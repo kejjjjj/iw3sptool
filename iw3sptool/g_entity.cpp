@@ -183,7 +183,9 @@ __declspec(naked) void G_SpawnASM2()
 	__asm
 	{
 		call fnc;
+		push esi;
 		call G_Spawn;
+		add esp, 0x4;
 		mov eax, esi;
 		pop esi;
 		retn;
