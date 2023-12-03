@@ -35,7 +35,7 @@ public:
 		orientation = (fvec3*)g->r.currentAngles;
 
 	};
-
+	virtual ~gameEntity() = default;
 	virtual bool valid_entity() const noexcept { return g != nullptr; }
 	bool is_brush_model() const noexcept  { return valid_entity() && g->r.bmodel; }
 
@@ -58,6 +58,7 @@ protected:
 class brushModelEntity : public gameEntity
 {
 public:
+	~brushModelEntity() = default;
 	brushModelEntity(gentity_s* gent) : gameEntity(gent) {
 
 		auto leaf = &cm->cmodels[g->s.index.brushmodel].leaf;
@@ -184,7 +185,7 @@ private:
 	struct brushmodelbase
 	{
 		brushmodelbase(gentity_s* gent) : g(gent){}
-		~brushmodelbase() = default;
+		virtual ~brushmodelbase() = default;
 		virtual brushmodel_type get_type() const noexcept = 0;
 		virtual void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
 		virtual void on_position_changed(const fvec3& origin, const fvec3& orientation) noexcept(true) = 0;
@@ -196,6 +197,7 @@ private:
 
 	struct brushmodel : public brushmodelbase {
 		brushmodel(gentity_s* gent) : brushmodelbase(gent) {};
+		~brushmodel() = default;
 		cbrush_t* linked_brush = 0;
 		showcol_brush brush_geometry;
 		showcol_brush original_geometry;
@@ -242,7 +244,7 @@ private:
 		cm_terrain terrain;
 		cm_terrain original_terrain;
 		terrainmodel(gentity_s* gent) : brushmodelbase(gent) {};
-
+		~terrainmodel() = default;
 		brushmodel_type get_type() const noexcept override { return brushmodel_type::TERRAIN; }
 
 		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
@@ -289,6 +291,7 @@ public:
 		geometry = CM_CreateSphere(copy, 1.f, 5, 5, { 16,16,36 });
 
 	}
+	~spawnerEntity() = default;
 
 	gentity_type get_type() const override
 	{
