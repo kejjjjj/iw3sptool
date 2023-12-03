@@ -18,6 +18,7 @@ struct showcol_brush
 	cbrush_t* brush;
 	int numVerts = 0;
 	fvec3 origin;
+	bool has_collisions = false;
 	//std::vector<SimplePlaneIntersection> intersections;
 };
 
@@ -36,6 +37,8 @@ enum class polyType
 
 inline std::vector<showcol_brush> s_brushes;
 
+bool CM_IsMatchingFilter(const std::unordered_set<std::string>& filters, char* material);
+
 showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor);
 void Cmd_CollisionFilter_f();
 
@@ -43,6 +46,7 @@ void CM_BuildAxialPlanes(float(*planes)[6][4], const cbrush_t* brush);
 int GetPlaneIntersections(const float** planes, int planeCount, SimplePlaneIntersection* OutPts);
 void CM_GetPlaneVec4Form(const cbrushside_t* sides, const float(*axialPlanes)[4], int index, float* expandedPlane);
 int BrushToPlanes(const cbrush_t* brush, float(*outPlanes)[4]);
+bool CM_BrushHasCollisions(const cbrush_t* brush);
 adjacencyWinding_t* BuildBrushdAdjacencyWindingForSide(int ptCount, SimplePlaneIntersection* pts, float* sideNormal, int planeIndex, adjacencyWinding_t* optionalOutWinding);
 bool PlaneFromPoints(vec4_t plane, const vec3_t a, const vec3_t b, const vec3_t c);
 

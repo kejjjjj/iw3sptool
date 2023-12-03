@@ -10,14 +10,11 @@ SimplePlaneIntersection* pts_results[1024];
 
 void Cmd_CollisionFilter_f()
 {
-	if (cmd_args->argc[cmd_args->nesting] > 2) {
-		Com_Printf(CON_CHANNEL_CONSOLEONLY, "usage: cm_showCollisionFilter <material>\n");
-		return;
-	}
+	int num_args = cmd_args->argc[cmd_args->nesting];
 
 	rb_requesting_to_stop_rendering = true;
 
-	if (cmd_args->argc[cmd_args->nesting] == 1) {
+	if (num_args == 1) {
 
 		if (s_brushes.empty()) {
 			rb_requesting_to_stop_rendering = false;
@@ -33,8 +30,10 @@ void Cmd_CollisionFilter_f()
 
 		return;
 	}
-
-	auto filter = *(cmd_args->argv[cmd_args->nesting] + 1);
+	std::unordered_set<std::string> filters;
+	for (int i = 1; i < num_args; i++) {
+		filters.insert(*(cmd_args->argv[cmd_args->nesting] + i));
+	}
 	s_brushes.clear();
 	cm_terrainpoints.clear();
 
@@ -42,17 +41,14 @@ void Cmd_CollisionFilter_f()
 
 		char* mat = (cm->materials[cm->brushes[i].axialMaterialNum[0][0]].material);
 
-		if (strstr(mat, filter) == 0 && strcmp(filter, "all"))
-			continue;
-
-		if (strstr(mat, "clip_foliage")) //ignore clip_foliage because it's so useless
+		if (CM_IsMatchingFilter(filters, mat) == false)
 			continue;
 
 		s_brushes.push_back(CM_GetBrushWindings(&cm->brushes[i], vec4_t{0,1,0,0.3f}));
 
 	}
 
-	CM_DiscoverTerrain(filter);
+	CM_DiscoverTerrain(filters);
 
 	Com_Printf("adding %i brushes and %i terrain pieces to the render queue\n", s_brushes.size(), cm_terrainpoints.size());
 	
@@ -79,7 +75,7 @@ showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor)
 	current_winding.numVerts = 0;
 	current_winding.brush = brush;
 	current_winding.origin = brush->get_origin();
-
+	current_winding.has_collisions = CM_BrushHasCollisions(brush);
 	current_brush = brush;
 
 	do {
@@ -155,6 +151,10 @@ int BrushToPlanes(const cbrush_t* brush, float(*outPlanes)[4])
 	} while (++i < brush->numsides + 6);
 
 	return i;
+}
+bool CM_BrushHasCollisions(const cbrush_t* brush)
+{
+	return (brush->contents & MASK_PLAYERSOLID) != 0;
 }
 void CM_GetPlaneVec4Form(const cbrushside_t* sides, const float(*axialPlanes)[4], int index, float* expandedPlane)
 {
@@ -337,16 +337,22 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 	bool only_bounces = Dvar_FindMalleableVar("cm_onlyBounces")->current.enabled;
 	bool only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.enabled;
 	bool depth_test = Dvar_FindMalleableVar("cm_showCollisionDepthTest")->current.enabled;
+	bool ignoreNonColliding = Dvar_FindMalleableVar("cm_ignoreNonColliding")->current.enabled;
 
 
 	if (collisionType == showCollisionType::DISABLED)
 		return;
 
 	if (collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH) {
-		for (auto& i : s_brushes)
+		for (auto& i : s_brushes) {
+
+			if (ignoreNonColliding && i.has_collisions == false)
+				continue;
+
 			if (CM_BrushInView(i.brush, frustum_planes, 5)) {
 				RB_RenderWinding(i, poly_type, depth_test, draw_dist, only_bounces, only_elevators);
 			}
+		}
 	}
 	if (collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH) {
 
@@ -406,6 +412,8 @@ void RB_RenderWinding(const showcol_brush& sb, polyType poly_type, bool depth_te
 		if (rb_requesting_to_stop_rendering) {
 			return;
 		}
+
+		
 
 		if (poly_type == polyType::POLYS)
 			RB_DrawCollisionPoly(i.points.size(), (float(*)[3])i.points.data(), c, depth_test);
@@ -592,4 +600,16 @@ void RB_DrawCollisionEdges(int numPoints, float(*points)[3], const float* colorF
 
 	//delete[] verts;
 
+}
+
+bool CM_IsMatchingFilter(const std::unordered_set<std::string>& filters, char* material)
+{
+
+	for (const auto& filter : filters) {
+
+		if (filter == "all" || std::string(material).contains(filter))
+			return true;
+	}
+
+	return false;
 }

@@ -74,11 +74,14 @@ void CG_Init()
 
     v.enabled = false;
 
-    Dvar_RegisterNew("cm_onlyBounces", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be bounced", v, l);
-    Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces that can be elevated", v, l);
+    Dvar_RegisterNew("cm_onlyBounces", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be bounced", v, l);
+    Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be elevated", v, l);
 
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
     Dvar_RegisterNew("cm_entityInfo", dvar_type::boolean, dvar_flags::saved, "Display brushmodel information", v, l);
+    v.enabled = true;
+
+    Dvar_RegisterNew("cm_ignoreNonColliding", dvar_type::boolean, dvar_flags::saved, "Don't display surfaces which don't have collisions", v, l);
 
     v.string = date.c_str();
     Dvar_RegisterNew("tool_version", dvar_type::string, dvar_flags::write_protected, date.c_str(), v, l);

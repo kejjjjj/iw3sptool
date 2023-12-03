@@ -3,9 +3,7 @@
 #include "pch.hpp"
 
 void CL_Disconnect();
-void SV_Map(void*);
-
-void IWonderIfThisWorks();
-
+void Map_Restart_f();
+void Fast_Restart_f();
 
 void G_Trigger(gentity_s* activator, gentity_s* trigger);

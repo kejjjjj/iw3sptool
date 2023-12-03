@@ -11,7 +11,7 @@ void CL_Disconnect()
 
 	s_brushes.clear();
 	cm_terrainpoints.clear();
-	gameEntities::getInstance().clear();
+	gameEntities::getInstance().clear(true);
 
 	rb_requesting_to_stop_rendering = false;
 
@@ -19,8 +19,26 @@ void CL_Disconnect()
 	return ((void(*)())0x444F10)();
 
 }
+void Map_Restart_f()
+{
 
+	s_brushes.clear();
+	cm_terrainpoints.clear();
+	gameEntities::getInstance().clear(true);
 
+	return engine_call<void>(0x005C4E30, 1);
+
+}
+void Fast_Restart_f()
+{
+
+	s_brushes.clear();
+	cm_terrainpoints.clear();
+	gameEntities::getInstance().clear(true);
+
+	return engine_call<void>(0x005C4E30, 0);
+
+}
 void __cdecl G_Trigger2(gentity_s* activator, gentity_s* trigger)
 {
 	//if (Dvar_FindMalleableVar("cm_disableTriggers")->current.enabled)

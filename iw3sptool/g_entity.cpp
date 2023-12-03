@@ -1,6 +1,6 @@
 #include "pch.hpp"
 
-std::string ent_filter;
+std::unordered_set<std::string> ent_filter;
 bool monitoring_entities = false;
 bool this_entity_is_relevant = false;
 bool thread_exists = false;
@@ -26,7 +26,7 @@ void update_entities_thread()
 	ents.time_since_loadgame = 0;
 	
 	
-	G_DiscoverGentities(level, ent_filter.c_str());
+	G_DiscoverGentities(level, ent_filter);
 	
 }
 
@@ -36,12 +36,9 @@ void Cmd_ShowEntities_f()
 
 	decltype(auto) ents = gameEntities::getInstance();
 
-	if (cmd_args->argc[cmd_args->nesting] > 2) {
-		Com_Printf(CON_CHANNEL_CONSOLEONLY, "usage: cm_showEntities <classname>\n");
-		return;
-	}
+	int num_args = cmd_args->argc[cmd_args->nesting];
 
-	if (cmd_args->argc[cmd_args->nesting] == 1) {
+	if (num_args == 1) {
 		monitoring_entities = false;
 		if (ents.empty()) {
 			return Com_Printf("there are no entities to be cleared.. did you intend to use cm_showEntities <classname>?\n");
@@ -51,18 +48,22 @@ void Cmd_ShowEntities_f()
 		ents.clear();
 		return;
 	}
-	monitoring_entities = true;
-	auto filter = *(cmd_args->argv[cmd_args->nesting] + 1);
-	ent_filter = filter;
+	std::unordered_set<std::string> filters;
+	for (int i = 1; i < num_args; i++) {
+		filters.insert(*(cmd_args->argv[cmd_args->nesting] + i));
+	}
 
-	G_DiscoverGentities(level, filter);
+	monitoring_entities = true;
+	ent_filter = filters;
+
+	G_DiscoverGentities(level, filters);
 
 	Com_Printf("adding %i entities to the render queue\n", ents.size());
 
 }
 
 
-void G_DiscoverGentities(level_locals_t* l, const char* classname)
+void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string>& filters)
 {
 	decltype(auto) ents = gameEntities::getInstance();
 
@@ -74,6 +75,8 @@ void G_DiscoverGentities(level_locals_t* l, const char* classname)
 	thread_exists = false;
 	
 	rb_requesting_to_stop_rendering = true;
+
+
 	ents.clear();
 	std::string classname_s;
 	for (int i = 0; i < l->num_entities; i++) {
@@ -81,7 +84,7 @@ void G_DiscoverGentities(level_locals_t* l, const char* classname)
 
 		classname_s = Scr_GetString(l->gentities[i].classname);
 
-		if (classname_s.contains(classname) == false && strcmp(classname, "all"))
+		if (CM_IsMatchingFilter(filters, (char*)classname_s.c_str()) == false)
 			continue;
 
 		ents.push_back(&l->gentities[i]);
@@ -103,7 +106,7 @@ void G_FreeEntity(gentity_s* gent)
 	//find_hook(hookEnums_e::HOOK_G_FREE_ENTITY).cast_call<void(*)(gentity_s*)>(ent);
 	
 	if (monitoring_entities && gent) {
-		this_entity_is_relevant = gameEntity::is_supported_entity(gent) && std::string(Scr_GetString(gent->classname)).contains(ent_filter);
+		this_entity_is_relevant = gameEntity::is_supported_entity(gent) && CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname));
 	}
 	return;
 }
@@ -111,7 +114,7 @@ void G_FreeEntity2()
 {
 	if (this_entity_is_relevant) {
 		Com_Printf("removing an entity from the render queue\n");
-		G_DiscoverGentities(level, ent_filter.c_str());
+		G_DiscoverGentities(level, ent_filter);
 		this_entity_is_relevant = false;
 	}
 	return;
@@ -152,8 +155,8 @@ void G_Spawn(gentity_s* gent)
 {
 	//std::cout << "total spawned entities: " << ++spawned_entities << '\n';
 	if (monitoring_entities && gent) {
-		if (std::string(Scr_GetString(gent->classname)).contains(ent_filter) && gameEntity::is_supported_entity(gent)) {
-			G_DiscoverGentities(level, ent_filter.c_str());
+		if (CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname)) && gameEntity::is_supported_entity(gent)) {
+			G_DiscoverGentities(level, ent_filter);
 			Com_Printf("adding a new entity to the render queue\n");
 		}
 

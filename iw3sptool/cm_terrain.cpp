@@ -1,25 +1,27 @@
 #include "pch.hpp"
 
-void CM_DiscoverTerrain(const char* filter)
+void CM_DiscoverTerrain(const std::unordered_set<std::string>& filters)
 {
 	for (int i = 0; i < cm->numLeafs; i++) {
-		CM_GetTerrainTriangles(&cm->leafs[i], filter);
+		CM_GetTerrainTriangles(&cm->leafs[i], filters);
 
 	}
 }
 
-void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::string& filter, const vec4_t color)
+void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::unordered_set<std::string>& filters, const vec4_t color)
 {
 
 	if (aabbTree->childCount) {
 		auto child = &cm->aabbTrees[aabbTree->u.firstChildIndex];
 		for (int i = 0; i < aabbTree->childCount; i++) {
-			CM_AdvanceAabbTree(child, terrain, filter, color);
+			CM_AdvanceAabbTree(child, terrain, filters, color);
 			++child;
 		}
 		return;
 	}
-	if (std::string(cm->materials[aabbTree->materialIndex].material).find(filter) == std::string::npos && strcmp(filter.c_str(), "all")) {
+	char* mat = cm->materials[aabbTree->materialIndex].material;
+
+	if (CM_IsMatchingFilter(filters, mat) == false) {
 		return;
 	}
 
@@ -68,7 +70,7 @@ void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const 
 	}
 
 }
-void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::string& material_filter)
+void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::unordered_set<std::string>& filters)
 {
 	if (!leaf)
 		return;
@@ -82,7 +84,7 @@ void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::string& material_filter)
 	terrain.leaf = leaf;
 	do {
 		CollisionAabbTree* aabb = &cm->aabbTrees[aabbIdx + leaf->firstCollAabbIndex];
-		CM_AdvanceAabbTree(aabb, &terrain, material_filter, vec4_t{0,0.1f,1.f, 0.8f});
+		CM_AdvanceAabbTree(aabb, &terrain, filters, vec4_t{0,0.1f,1.f, 0.8f});
 
 		++aabbIdx;
 	} while (aabbIdx < leaf->collAabbCount);
@@ -105,7 +107,7 @@ std::optional<cm_terrain> CM_GetTerrainTriangles(cLeaf_t* leaf, const vec4_t col
 	terrain.leaf = leaf;
 	do {
 		CollisionAabbTree* aabb = &cm->aabbTrees[aabbIdx + leaf->firstCollAabbIndex];
-		CM_AdvanceAabbTree(aabb, &terrain, "all", color);
+		CM_AdvanceAabbTree(aabb, &terrain, { "all" }, color);
 		++aabbIdx;
 	} while (aabbIdx < leaf->collAabbCount);
 

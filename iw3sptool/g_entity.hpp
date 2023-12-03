@@ -9,7 +9,7 @@ enum class gentity_type
 	OTHER
 };
 
-void G_DiscoverGentities(level_locals_t* l, const char* classname);
+void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string>& filters);
 void Cmd_ShowEntities_f();
 void G_FreeEntity(gentity_s* gent);
 void G_FreeEntityASM();
@@ -299,16 +299,19 @@ public:
 
 		if (*origin != oldOrigin || *orientation != oldOrientation) {
 			
+			fvec3 org = g->r.currentOrigin;
+			fvec3 maxs = g->r.maxs;
 
-			fvec3 copy = *origin;
+			org.z += (maxs.z - g->r.mins[2]) / 2;
+			maxs.z /= 2;
 
-			copy.z += 36;
 
-			geometry = CM_CreateSphere(copy, 1.f, 5, 5, { 16,16,36 });
+			geometry = CM_CreateSphere(org, 1.f, 5, 5, maxs);
 
 			oldOrigin = *origin;
 			oldOrientation = *orientation;
 		}
+
 
 
 		if (origin->dist(predictedPlayerState->origin) > drawdist)
@@ -322,8 +325,6 @@ public:
 	}
 
 private:
-
-	gentity_s* g = 0;
 	std::vector<fvec3> geometry;
 };
 
@@ -346,23 +347,16 @@ public:
 		entities.push_back(std::move(ent));
 	}
 	bool empty() const noexcept { return entities.empty(); }
-	void clear() {
+	void clear(bool clear_filter = false) {
 		brushModelEntity* bmodel = 0;
 
-		for (auto& e : entities) {
-			
-			switch (e->get_type()) {
-			case gentity_type::BRUSHMODEL:
-				break;
-			default:
-				break;
-			}
+		if (clear_filter)
+			Cbuf_AddText("cm_showEntities\n");
 
-		}
 		freed_entities = 0;
 		spawned_entities = 0;
 		entities.clear();
-	
+		
 	}
 	size_t size() const noexcept { return entities.size(); }
 
@@ -390,7 +384,16 @@ private:
 
 	std::vector<std::unique_ptr<gameEntity>> entities;
 };
+inline bool G_EntityIsSpawner(const std::string& classname)
+{
+	const static std::vector<const char*> classnames = { "actor_", "script_origin", "script_struct", "strict_vehicle", "struct_model"};
 
+	for (auto& c : classnames) {
+		if (classname.contains(c))
+			return true;
+	}
+	return false;
+}
 inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 
 	if (gameEntities::getInstance().it_is_ok_to_load_entities == false)
@@ -400,7 +403,7 @@ inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 		std::unique_ptr<brushModelEntity>&& bmodel = std::move(std::make_unique<brushModelEntity>(gent));
 		return bmodel->valid_entity() ? std::move(bmodel) : nullptr;
 	}
-	else if (std::string(Scr_GetString(gent->classname)).find("actor_") != std::string::npos) {
+	else if (G_EntityIsSpawner(Scr_GetString(gent->classname))) {
 		return std::move(std::make_unique<spawnerEntity>(gent));
 	}
 

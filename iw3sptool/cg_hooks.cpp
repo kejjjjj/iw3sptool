@@ -30,6 +30,8 @@ void CG_CreateHooks()
 	hooktable.insert(hookEnums_e::HOOK_SV_LINKENTITY2, hook::hookobj<void*>(0x4EFD9A, G_SpawnASM2, TRUE));
 
 	hooktable.insert(hookEnums_e::HOOK_LOADGAME, hook::hookobj<void*>(0x5C4EC0, G_LoadGame_f, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_MAP_RESTART, hook::hookobj<void*>(0x5C4EA0, Map_Restart_f, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_FAST_RESTART, hook::hookobj<void*>(0x5C4E90, Fast_Restart_f, TRUE));
 
 	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 
