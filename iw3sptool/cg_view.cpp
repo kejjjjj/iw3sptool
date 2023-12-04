@@ -2,14 +2,14 @@
 
 
 
-void CG_OffsetFirstPersonView(cg_s* cgs)
+void CG_OffsetFirstPersonView(cg_s* _cgs)
 {
 	if (Dvar_FindMalleableVar("cg_thirdPerson")->current.enabled)
 		return;
 
 	decltype(auto) detour_func = find_hook(hookEnums_e::HOOK_FIRSTPERSON);
 
-	return detour_func.cast_call<void(__cdecl*)(cg_s*)>(cgs);
+	return detour_func.cast_call<void(__cdecl*)(cg_s*)>(_cgs);
 }
 __declspec(naked) void CG_OffsetThirdPersonViewASM()
 {

@@ -181,6 +181,7 @@ typedef vec_t vec4_t[4];
 
 #include "sys_tools.hpp"
 
+#include "bg_pmove.hpp"
 
 
 using namespace std::chrono_literals;

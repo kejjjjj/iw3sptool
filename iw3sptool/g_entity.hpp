@@ -248,15 +248,15 @@ private:
 		brushmodel_type get_type() const noexcept override { return brushmodel_type::TERRAIN; }
 
 		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
-			CM_ShowTerrain(&terrain, frustum_planes, poly_type, depth_test, drawdist, false);
+			CM_ShowTerrain(&terrain, frustum_planes, poly_type, depth_test, drawdist, false, false);
 		}
-		void on_position_changed(const fvec3& origin, const fvec3& delta_angles) noexcept(true) override {
+		void on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) override {
 			terrain = original_terrain;
 
 			for (auto& t : terrain.tris) {
-				t.a += origin;
-				t.b += origin;
-				t.c += origin;
+				t.a += _origin;
+				t.b += _origin;
+				t.c += _origin;
 
 				fvec3 c = g->r.currentOrigin;
 
@@ -351,8 +351,6 @@ public:
 	}
 	bool empty() const noexcept { return entities.empty(); }
 	void clear(bool clear_filter = false) {
-		brushModelEntity* bmodel = 0;
-
 		if (clear_filter)
 			Cbuf_AddText("cm_showEntities\n");
 

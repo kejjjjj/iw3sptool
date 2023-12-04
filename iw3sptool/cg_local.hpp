@@ -1250,7 +1250,7 @@ struct playerState_s
 	int commandTime;
 	pmtype_t pm_type;
 	int bobCycle;
-	pmflags_t pm_flags;
+	int pm_flags;
 	int weapFlags;
 	int otherFlags;
 	int pm_time;

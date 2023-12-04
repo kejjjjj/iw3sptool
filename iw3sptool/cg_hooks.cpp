@@ -33,6 +33,11 @@ void CG_CreateHooks()
 	hooktable.insert(hookEnums_e::HOOK_MAP_RESTART, hook::hookobj<void*>(0x5C4EA0, Map_Restart_f, TRUE));
 	hooktable.insert(hookEnums_e::HOOK_FAST_RESTART, hook::hookobj<void*>(0x5C4E90, Fast_Restart_f, TRUE));
 
+	hooktable.insert(hookEnums_e::HOOK_PMOVE, hook::hookobj<void*>(0x5BD440, Pmove, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_PMOVESINGLE, hook::hookobj<void*>(0x5BD303, PmoveSingleASM, TRUE));
+
+	hooktable.insert(hookEnums_e::HOOK_PM_SPRINTFIX, hook::hookobj<void*>(0x5B7B1E, PM_SprintFixASM, TRUE));
+
 	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 
 

@@ -9,6 +9,7 @@ struct cm_triangle
 	fvec3 c;
 	vec4_t plane;
 	vec4_t color;
+	bool has_collision = false;
 	//bool edge_walkable = true;
 
 	fvec3 get_mins() const noexcept {
@@ -55,6 +56,7 @@ struct cm_terrain
 	cLeaf_t* leaf = 0;
 	std::list<cm_triangle> tris;
 };
+bool CM_AabbTreeHasCollisions(const CollisionAabbTree* tree);
 
 void CM_DiscoverTerrain(const std::unordered_set<std::string>& filters);
 
@@ -64,7 +66,7 @@ std::optional<cm_terrain> CM_GetTerrainTriangles(cLeaf_t* leaf, const vec4_t col
 
 
 
-void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyType poly_type, bool depth_test, float draw_dist, bool only_bounces);
+void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyType poly_type, bool depth_test, float draw_dist, bool only_bounces, bool ignoreNonColliding);
 bool CM_TriangleInView(const cm_triangle* leaf, struct cplane_s* frustumPlanes, int numPlanes);
 char CM_IsEdgeWalkable(int edgeIndex, int triIndex);
 

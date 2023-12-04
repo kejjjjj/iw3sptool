@@ -1,16 +1,24 @@
-# iw3sptool // a tool to preview map surfaces
+# iw3sptool // a multipurpose tool for call of duty 4 singleplayer
 
 ![image](https://github.com/kejjjjj/iw3sptool/assets/108032666/0c3b108d-a0cf-4235-9138-0737ee0d4537)
 
 ![image](https://github.com/kejjjjj/iw3sptool/assets/108032666/d9c08f5e-47fc-4a8a-90e3-eb74a546b0f0)
 
+## Features
+- collision drawing 
+- entity drawing
+- thirdperson
+- player movement modification
 
 ## Notes
 - Only for cod4 singleplayer patch 1.5
 
 ## Usage
 - The .asi file goes to the "miles" folder located in the cod4 root directory
-- All commands start with the cm_ prefix (clip map)
+- All commands start with the following prefixes:
+    - cm_ (clip map)
+    - pm_ (player movement)
+    - cg_thirdPerson
 - cm_showCollisionFilter expects the name of a material (e.g. "clip") and using it without an argument will clear the render queue
 - cm_showEntities expects the name of a classname (e.g. "trigger_multiple") and using it without an argument will clear the render queue
 - using the "all" argument on cm_showCollisionFilter and cm_showEntities will select *ALL* relevant items 

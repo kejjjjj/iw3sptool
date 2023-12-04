@@ -49,7 +49,6 @@ void hook::get_bytes(void* addr, size_t len, BYTE* buffer)
 DWORD hook::find_pattern(std::string moduleName, std::string pattern)
 {
 
-	DWORD firstMatch = 0;
 	DWORD rangeStart = reinterpret_cast<DWORD>(GetModuleHandleA(moduleName.c_str()));
 
 	if (!rangeStart)

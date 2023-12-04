@@ -68,7 +68,6 @@ showcol_brush CM_GetBrushWindings(cbrush_t* brush, vec4_t polycolor)
 	int intersections = GetPlaneIntersections((const float**)outPlanes, planeCount, pts);
 	adjacencyWinding_t windings[40]{};
 
-	int verts = 0;
 	int intersection = 0;
 
 	current_winding.windings.clear();
@@ -144,7 +143,7 @@ int BrushToPlanes(const cbrush_t* brush, float(*outPlanes)[4])
 {
 	float planes[6][4];
 	CM_BuildAxialPlanes((float(*)[6][4])planes, brush);
-	int i = 0;
+	uint32_t i = 0;
 	do {
 		CM_GetPlaneVec4Form(brush->sides, planes, i, outPlanes[i]);
 
@@ -176,14 +175,14 @@ void CM_GetPlaneVec4Form(const cbrushside_t* sides, const float(*axialPlanes)[4]
 	expandedPlane[3] = plane[3];
 
 }
-adjacencyWinding_t* BuildBrushdAdjacencyWindingForSide(int ptCount, SimplePlaneIntersection* pts, float* sideNormal, int planeIndex, adjacencyWinding_t* optionalOutWinding)
+adjacencyWinding_t* BuildBrushdAdjacencyWindingForSide(int ptCount, SimplePlaneIntersection* _pts, float* sideNormal, int planeIndex, adjacencyWinding_t* optionalOutWinding)
 {
 	adjacencyWinding_t* r = 0;
 
 	__asm
 	{
 		mov edx, ptCount;
-		mov ecx, pts;
+		mov ecx, _pts;
 		push optionalOutWinding;
 		push planeIndex;
 		push sideNormal;
@@ -358,7 +357,7 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 
 		if (only_elevators == false) {
 			for (auto& i : cm_terrainpoints) {
-				CM_ShowTerrain(&i, frustum_planes, poly_type, depth_test, draw_dist, only_bounces);
+				CM_ShowTerrain(&i, frustum_planes, poly_type, depth_test, draw_dist, only_bounces, ignoreNonColliding);
 			}
 		}
 
@@ -556,12 +555,12 @@ std::vector<fvec3> CM_CreateSphere(const fvec3& ref_org, const float radius, con
 void RB_DrawCollisionPoly(int numPoints, float(*points)[3], const float* colorFloat, bool depthtest)
 {
 	uint8_t c[4];
-	std::vector<fvec3> pts;
+	std::vector<fvec3> _pts;
 
 	R_ConvertColorToBytes(colorFloat, c);
 
 	for (int i = 0; i < numPoints; i++)
-		pts.push_back(points[i]);
+		_pts.push_back(points[i]);
 
 
 	GfxPointVertex verts[4]{};
@@ -574,7 +573,7 @@ void RB_DrawCollisionPoly(int numPoints, float(*points)[3], const float* colorFl
 
 	//}
 
-	RB_DrawPolyInteriors(numPoints, pts, c, true, depthtest);
+	RB_DrawPolyInteriors(numPoints, _pts, c, true, depthtest);
 
 }
 

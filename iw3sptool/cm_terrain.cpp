@@ -2,15 +2,18 @@
 
 void CM_DiscoverTerrain(const std::unordered_set<std::string>& filters)
 {
-	for (int i = 0; i < cm->numLeafs; i++) {
+	for (uint32_t i = 0; i < cm->numLeafs; i++) {
 		CM_GetTerrainTriangles(&cm->leafs[i], filters);
 
 	}
 }
-
+bool CM_AabbTreeHasCollisions(const CollisionAabbTree* tree)
+{
+	dmaterial_t* materialInfo = &cm->materials[tree->materialIndex];
+	return (materialInfo->contentFlags & MASK_PLAYERSOLID) != 0;
+}
 void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::unordered_set<std::string>& filters, const vec4_t color)
 {
-
 	if (aabbTree->childCount) {
 		auto child = &cm->aabbTrees[aabbTree->u.firstChildIndex];
 		for (int i = 0; i < aabbTree->childCount; i++) {
@@ -43,7 +46,7 @@ void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const 
 		do {
 			cm_triangle tri;
 			//tri.edge_walkable = CM_IsEdgeWalkable(2, firstTri);
-
+			tri.has_collision = CM_AabbTreeHasCollisions(aabbTree);
 			tri.a = cm->verts[cm->triIndices[triIndice]];
 			tri.b = cm->verts[cm->triIndices[triIndice + 1]];
 			tri.c = cm->verts[cm->triIndices[triIndice + 2]];
@@ -82,6 +85,7 @@ void CM_GetTerrainTriangles(cLeaf_t* leaf, const std::unordered_set<std::string>
 
 	cm_terrain terrain{};
 	terrain.leaf = leaf;
+
 	do {
 		CollisionAabbTree* aabb = &cm->aabbTrees[aabbIdx + leaf->firstCollAabbIndex];
 		CM_AdvanceAabbTree(aabb, &terrain, filters, vec4_t{0,0.1f,1.f, 0.8f});
@@ -114,13 +118,12 @@ std::optional<cm_terrain> CM_GetTerrainTriangles(cLeaf_t* leaf, const vec4_t col
 	return terrain.tris.empty() ? std::nullopt : std::make_optional(terrain);
 
 }
-void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyType poly_type, bool depth_test, float drawdist, bool only_bounces)
+void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyType poly_type, bool depth_test, float drawdist, bool only_bounces, bool ignoreNonColliding)
 {
 	uint8_t col[4];
 	vec3_t tris[3];
 	fvec3 center;
 	std::vector<fvec3> points(3);
-	int i = 2;
 
 	bool unwalkable_edges = false;
 
@@ -129,6 +132,9 @@ void CM_ShowTerrain(cm_terrain* terrain, struct cplane_s* frustumPlanes, polyTyp
 		if ((it->plane[2] < 0.3f || it->plane[2] > 0.7f) && only_bounces) {
 				continue;
 		}
+
+		if (ignoreNonColliding && it->has_collision == false)
+			continue;
 
 		//don't render if not visible
 		if (!CM_TriangleInView(&*it, frustumPlanes, 5))

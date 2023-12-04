@@ -37,6 +37,9 @@
     <Filter Include="Source Files\g">
       <UniqueIdentifier>{36363a5e-f623-49dd-9fa5-98659aec35d4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\pm">
+      <UniqueIdentifier>{f5759a1f-7c12-40b5-b274-58398f53163f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mh\buffer.h">
@@ -132,6 +135,9 @@
     <ClInclude Include="cg_view.hpp">
       <Filter>Source Files\cg</Filter>
     </ClInclude>
+    <ClInclude Include="bg_pmove.hpp">
+      <Filter>Source Files\pm</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -205,6 +211,9 @@
     </ClCompile>
     <ClCompile Include="cg_view.cpp">
       <Filter>Source Files\cg</Filter>
+    </ClCompile>
+    <ClCompile Include="bg_pmove.cpp">
+      <Filter>Source Files\pm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

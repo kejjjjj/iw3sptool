@@ -131,7 +131,7 @@ int BoxOnPlaneSide(const vec3_t emins, const vec3_t emaxs, cplane_s* p) {
 	return (2 * (dist2 < p->dist)) | (dist1 > p->dist);
 }
 
-void BuildFrustumPlanes(const GfxViewParms* viewParms, cplane_s* frustumPlanes)
+void BuildFrustumPlanes([[maybe_unused]]const GfxViewParms* viewParms, cplane_s* frustumPlanes)
 {
 
 	for (int i = 0; i < 5; i++) {

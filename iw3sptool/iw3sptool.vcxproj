@@ -149,6 +149,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="bg_pmove.hpp" />
     <ClInclude Include="cg_hooks.hpp" />
     <ClInclude Include="cg_init.hpp" />
     <ClInclude Include="cg_local.hpp" />
@@ -182,6 +183,7 @@
     <ClInclude Include="typedefs.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bg_pmove.cpp" />
     <ClCompile Include="cg_hooks.cpp" />
     <ClCompile Include="cg_init.cpp" />
     <ClCompile Include="cg_view.cpp" />
