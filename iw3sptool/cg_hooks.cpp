@@ -38,6 +38,9 @@ void CG_CreateHooks()
 
 	hooktable.insert(hookEnums_e::HOOK_PM_SPRINTFIX, hook::hookobj<void*>(0x5B7B1E, PM_SprintFixASM, TRUE));
 
+	hooktable.insert(hookEnums_e::HOOK_PARSE_ENTITYFIELD, hook::hookobj<void*>(0x4E93C0, G_ParseEntityFieldsASM, TRUE));
+
+
 	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 
 

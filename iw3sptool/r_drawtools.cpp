@@ -136,3 +136,36 @@ void CL_AddDebugString(float* xyz, float* color, float scale, char* text, int du
 
 	}
 }
+
+std::optional<ivec2> WorldToScreen(const fvec3& location)
+{
+	const refdef_s* refdef = &cgs->refdef;
+
+	const int centerX = 640 / 2;
+	const int centerY = 480 / 2;
+
+	const fvec3 vright = refdef->viewaxis[1];
+	const fvec3 vup = refdef->viewaxis[2];
+	const fvec3 vfwd = refdef->viewaxis[0];
+
+	const fvec3 vLocal = location - fvec3(refdef->vieworg);
+	fvec3 vTransform;
+
+	vTransform.x = vLocal.dot(vright);
+	vTransform.y = vLocal.dot(vup);
+	vTransform.z = vLocal.dot(vfwd);
+
+	if (vTransform.z < 0.01) {
+		return std::nullopt;
+	}
+	fvec2 out;
+
+	out.x = static_cast<float>(centerX) * (1.f - (vTransform.x / refdef->tanHalfFovX / vTransform.z));
+	out.y = static_cast<float>(centerY) * (1.f - (vTransform.y / refdef->tanHalfFovY / vTransform.z));
+
+
+	if (vTransform.z > 0)
+		return ivec2(out);
+
+	return std::nullopt;
+}

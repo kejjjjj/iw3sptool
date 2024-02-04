@@ -78,3 +78,15 @@ unsigned short SL_GetStringOfSize(const char* str)
         add	esp, 0xC
     }
 }
+
+float R_ScaleByDistance(float dist)
+{
+    float d_max = 10000.0;
+    float scale_max = 7.f;
+
+    dist = std::max(0.0f, std::min(d_max, dist));
+
+    float scale = 2.f - scale_max * (dist / (d_max));
+
+    return std::clamp(scale, 0.1f, 2.f);
+}

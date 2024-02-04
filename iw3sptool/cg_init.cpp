@@ -107,6 +107,7 @@ void CG_Init()
     Dvar_RegisterNew("pm_fixed", dvar_type::boolean, dvar_flags::none, "forces fps to com_maxfps value even if the computer can't reach the fps", v, l);
     Dvar_RegisterNew("pm_multiplayer", dvar_type::boolean, dvar_flags::none, "fps behaves the same way as it does in multiplayer", v, l);
 
+    Dvar_RegisterNew("pm_coordinates", dvar_type::boolean, dvar_flags::none, "show player coordinates", v, l);
 
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 

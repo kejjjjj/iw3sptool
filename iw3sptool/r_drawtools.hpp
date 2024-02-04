@@ -20,3 +20,5 @@ void R_AddCmdDrawStretchPic(Material* material, float x, float y, float w, float
 void R_DrawRect(const char* material, float x, float y, float w, float h, const float* color);
 
 void CL_AddDebugString(float* xyz, float* color, float scale, char* text, int duration);
+
+std::optional<ivec2> WorldToScreen(const fvec3& location);

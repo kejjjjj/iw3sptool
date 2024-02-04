@@ -34,6 +34,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpReser
                     std::this_thread::sleep_for(1s);
                 }
 
+                //fclose(_con);
+
                 return 1;
 
             });

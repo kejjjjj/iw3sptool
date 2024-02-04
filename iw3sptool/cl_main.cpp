@@ -12,6 +12,7 @@ void CL_Disconnect()
 	s_brushes.clear();
 	cm_terrainpoints.clear();
 	gameEntities::getInstance().clear(true);
+	entity_globals::ent_fields.clear();
 
 	rb_requesting_to_stop_rendering = false;
 
@@ -25,6 +26,7 @@ void Map_Restart_f()
 	s_brushes.clear();
 	cm_terrainpoints.clear();
 	gameEntities::getInstance().clear(true);
+	entity_globals::ent_fields.clear();
 
 	return engine_call<void>(0x005C4E30, 1);
 
@@ -35,6 +37,7 @@ void Fast_Restart_f()
 	s_brushes.clear();
 	cm_terrainpoints.clear();
 	gameEntities::getInstance().clear(true);
+	entity_globals::ent_fields.clear();
 
 	return engine_call<void>(0x005C4E30, 0);
 

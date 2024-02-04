@@ -21,7 +21,7 @@ inline level_locals_t* level = reinterpret_cast<level_locals_t*>(0xE18E18);
 inline WeaponDef** BG_WeaponNames = reinterpret_cast<WeaponDef**>(0x14227A8);
 inline scrMemTreePub_t* gScrMemTreePub = reinterpret_cast<scrMemTreePub_t*>(0xFDBBC4);
 inline int* bg_lastParsedWeaponIndex = reinterpret_cast<int*>(0x1E20A04);
-
+inline ent_field_t* ent_fields = reinterpret_cast<ent_field_t*>(0x67FFB8);
 inline cg_s* cgs = reinterpret_cast<cg_s*>(0x6FA590);
 
 inline clientUIActive_t* clientUI = reinterpret_cast<clientUIActive_t*>(0x85BD70);

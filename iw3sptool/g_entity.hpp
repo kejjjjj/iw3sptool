@@ -9,8 +9,23 @@ enum class gentity_type
 	OTHER
 };
 
+struct entity_fields
+{
+	std::vector<std::pair<std::string, std::string>> key_value;
+};
+
+
+struct entity_globals
+{
+	static std::unordered_map<int, entity_fields> ent_fields;
+};
+
 void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string>& filters);
 void Cmd_ShowEntities_f();
+
+void G_ParseEntityFieldsASM();
+void G_ParseEntityFields(gentity_s* gent, int);
+
 void G_FreeEntity(gentity_s* gent);
 void G_FreeEntityASM();
 void G_FreeEntityASM2();
@@ -46,6 +61,7 @@ public:
 	static bool is_supported_entity(gentity_s* g) { return createEntity(g).get(); }
 	virtual gentity_type get_type() const = 0;
 	virtual void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
+	virtual void render2d(float draw_dist) = 0;
 
 protected:
 	gentity_s* g = 0;
@@ -127,46 +143,38 @@ public:
 				}
 			}
 
-
-			if (Dvar_FindMalleableVar("cm_entityInfo")->current.enabled) {
-				static std::string str1;
-				static std::string str2;
-				static std::string str3;
-				float Z_offset = 0.f;
-				const fvec3 center = b.get()->get_center();
-
-				if (center.dist(predictedPlayerState->origin) > drawdist)
-					return;
-
-				if (g->classname) {
-					str1 = "classname: ";
-					str1 += Scr_GetString(g->classname);
-					fvec3 n = center;
-					n.z -= Z_offset;
-
-					CL_AddDebugString(n, vec4_t{ 1,1,1,1 }, .5f, (char*)str1.c_str(), 2);
-					Z_offset += 5.f;
-				}
-				if (g->targetname) {
-					str2 = "targetname: ";
-					str2 += Scr_GetString(g->targetname);
-					fvec3 n = center;
-					n.z -= Z_offset;
-					CL_AddDebugString(n, vec4_t{ 1,1,1,1 }, .5f, (char*)str2.c_str(), 2);
-					Z_offset += 5.f;
-
-				}
-				if (g->target) {
-					str3 = "target: ";
-					str3 += Scr_GetString(g->target);
-					fvec3 n = center;
-					n.z -= Z_offset;
-					CL_AddDebugString(n, vec4_t{ 1,1,1,1 }, .5f, (char*)str3.c_str(), 2);
-				}
-			}
-
 		}
 
+	}
+	void render2d(float draw_dist) override
+	{
+
+		for (auto& b : brushmodels)
+		{
+			auto center = b->get_center();
+			float dist = center.dist(predictedPlayerState->origin);
+
+			if (dist > draw_dist)
+				continue;
+
+			auto fields = entity_globals::ent_fields.find(g->s.number);
+
+			if (fields != entity_globals::ent_fields.end()) {
+				std::string buff;
+				for (auto& field : fields->second.key_value)
+				{
+					buff += std::string(field.first) + " - " + field.second + "\n";
+				}
+
+				if (auto op = WorldToScreen(center)) {
+					auto& p = op.value();
+					float scale = R_ScaleByDistance(dist) * 0.2f;
+					R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
+
+				}
+
+			}
+		}
 	}
 	gentity_type get_type() const override
 	{
@@ -326,7 +334,37 @@ public:
 			RB_DrawCollisionEdges(geometry.size(), (float(*)[3])geometry.data(), vec4_t{ 1,0,0,0.3f }, depth_test);
 
 	}
+	void render2d(float draw_dist) override 
+	{
+		fvec3 org = g->r.currentOrigin;
+		fvec3 maxs = g->r.maxs;
 
+		org.z += (g->r.maxs[2] - g->r.mins[2]) / 2;
+
+		auto center = org;
+		float dist = center.dist(predictedPlayerState->origin);
+
+		if (dist > draw_dist)
+			return;
+
+		auto fields = entity_globals::ent_fields.find(g->s.number);
+
+		if (fields != entity_globals::ent_fields.end()) {
+			std::string buff;
+			for (auto& field : fields->second.key_value)
+			{
+				buff += std::string(field.first) + " - " + field.second + "\n";
+			}
+
+			if (auto op = WorldToScreen(center)) {
+				auto& p = op.value();
+				float scale = R_ScaleByDistance(dist) * 0.2f;
+				R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
+
+			}
+
+		}
+	}
 private:
 	std::vector<fvec3> geometry;
 };
@@ -410,3 +448,4 @@ inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 
 	return nullptr;
 }
+char* G_GetEntityKey(gentity_s* g);

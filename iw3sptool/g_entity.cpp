@@ -5,6 +5,9 @@ bool monitoring_entities = false;
 bool this_entity_is_relevant = false;
 bool thread_exists = false;
 
+std::unordered_map<int, entity_fields> entity_globals::ent_fields = {};
+
+
 void update_entities_thread()
 {
 	decltype(auto) ents = gameEntities::getInstance();
@@ -99,7 +102,81 @@ void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string
 	rb_requesting_to_stop_rendering = false;
 
 }
+__declspec(naked) void G_ParseEntityFieldsASM()
+{
+	static constexpr DWORD r = 0x4E9403;
+	__asm
+	{
+		push ecx;
+		//push ebx;
 
+		//mov ebx, [esp + 0x8 + 4];
+
+		push 0;
+		push esi;
+		call G_ParseEntityFields;
+		add esp, 8;
+
+		pop ecx;
+		retn;
+	}
+}
+void G_ParseEntityFields(gentity_s* gent, int a2)
+{
+	entity_fields f;
+
+	constexpr DWORD fnc = 0x4E9180;
+	for (int i = 0; i < level->spawnVar.numSpawnVars; i++)
+	{
+
+		auto key = level->spawnVar.spawnVars[i][0];
+		auto value = level->spawnVar.spawnVars[i][1];
+
+		__asm
+		{
+			push a2;
+			push gent;
+			mov ecx, key;
+			mov eax, value;
+			call fnc;
+			add esp, 8;
+
+		}
+
+		if(key && value)
+			f.key_value.push_back({ key, value });
+
+	}
+
+	if (f.key_value.size())
+		entity_globals::ent_fields.insert({ gent->s.number, std::move(f) });
+
+	gent->s.lerp.pos.trBase[0] = gent->r.currentOrigin[0];
+	gent->s.lerp.pos.trBase[1] = gent->r.currentOrigin[1];
+	gent->s.lerp.pos.trBase[2] = gent->r.currentOrigin[2];
+	gent->s.lerp.pos.trType = TR_STATIONARY;
+	gent->s.lerp.pos.trTime = 0;
+	gent->s.lerp.pos.trDuration = 0;
+	gent->s.lerp.pos.trDelta[0] = 0.0;
+	gent->s.lerp.pos.trDelta[1] = 0.0;
+	gent->s.lerp.pos.trDelta[2] = 0.0;
+	gent->r.currentOrigin[0] = gent->r.currentOrigin[0];
+	gent->r.currentOrigin[1] = gent->r.currentOrigin[1];
+	gent->r.currentOrigin[2] = gent->r.currentOrigin[2];
+	gent->s.lerp.apos.trBase[0] = gent->r.currentAngles[0];
+	gent->s.lerp.apos.trBase[1] = gent->r.currentAngles[1];
+	gent->s.lerp.apos.trBase[2] = gent->r.currentAngles[2];
+	gent->s.lerp.apos.trType = TR_STATIONARY;
+	gent->s.lerp.apos.trTime = 0;
+	gent->s.lerp.apos.trDuration = 0;
+	gent->s.lerp.apos.trDelta[0] = 0.0;
+	gent->s.lerp.apos.trDelta[1] = 0.0;
+	gent->s.lerp.apos.trDelta[2] = 0.0;
+	gent->r.currentAngles[0] = gent->r.currentAngles[0];
+	gent->r.currentAngles[1] = gent->r.currentAngles[1];
+	gent->r.currentAngles[2] = gent->r.currentAngles[2];
+
+}
 void G_FreeEntity(gentity_s* gent)
 {
 	//std::cout << "freeing entity\n";
@@ -217,4 +294,50 @@ void G_LoadGame_f()
 
 	return;
 	
+}
+char* G_GetEntityKey(gentity_s* g)
+{
+	if (!g)
+		return nullptr;
+
+	auto field = ent_fields;
+
+	for (int i = 0;; i++) {
+
+		char* v = Scr_GetString(i);
+
+		if (!v)
+			return 0;
+
+		std::cout << '[' << i << ']' << v << '\n';
+
+	}
+	return 0;
+	while (field) {
+
+		if (field->name == nullptr)
+			break;
+		
+		for (int i = 0; i < level->num_entities; i++) {
+
+			auto key = *(WORD*)(&g->s.loopSound + field->ofs);
+
+			
+			if (key) {
+				if (level->gentities[i].targetname == key) {
+					std::cout << "[" << g->s.loopSound << "]: " << field->name << " = " << Scr_GetString(g->targetname) << '\n';
+					break;
+
+
+				}
+			}
+
+		}
+
+		++field;
+
+	}
+
+	return nullptr;
+
 }

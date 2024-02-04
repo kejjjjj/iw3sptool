@@ -2347,6 +2347,7 @@ union XAnimIndices
 	void* data;
 };
 
+
 union XAnimDynamicFrames
 {
 	char(*_1)[3];
@@ -4271,6 +4272,27 @@ struct tagInfo_s
 	int index;
 	float axis[4][3];
 	float parentInvAxis[4][3];
+};
+enum fieldtype_t
+{
+	F_INT = 0x0,
+	F_FLOAT = 0x1,
+	F_LSTRING = 0x2,
+	F_STRING = 0x3,
+	F_VECTOR = 0x4,
+	F_ENTITY = 0x5,
+	F_ENTHANDLE = 0x6,
+	F_VECTORHACK = 0x7,
+	F_OBJECT = 0x8,
+	F_MODEL = 0x9,
+};
+
+struct ent_field_t
+{
+	const char* name;
+	int ofs;
+	fieldtype_t type;
+	void(__cdecl* callback)(gentity_s*, int);
 };
 union $73EC31463AB2E2014DA76FFB3C0281FF
 {
@@ -6804,7 +6826,6 @@ struct level_locals_t
 	int logFile;
 	int initializing;
 	int clientIsSpawning;
-	objective_t objectives[16];
 	int maxclients;
 	int framenum;
 	int time;
@@ -6813,6 +6834,7 @@ struct level_locals_t
 	int startTime;
 	int teamScores[4];
 	int lastTeammateHealthTime;
+	SpawnVar spawnVar;
 	int bUpdateScoresForIntermission;
 	bool teamHasRadar[4];
 	int manualNameChange;
@@ -6825,7 +6847,6 @@ struct level_locals_t
 	int voteYes;
 	int voteNo;
 	int numVotingClients;
-	SpawnVar spawnVar;
 	int savepersist;
 	EntHandle droppedWeaponCue[32];
 	float fFogOpaqueDist;
@@ -6850,8 +6871,10 @@ struct level_locals_t
 	float compassMapUpperLeft[2];
 	float compassMapWorldSize[2];
 	float compassNorth[2];
-	scr_vehicle_s* vehicles;
+	void* vehicles;
+	objective_t objectives[16];
 };
+
 typedef struct
 {
 	short UNKNOW;
