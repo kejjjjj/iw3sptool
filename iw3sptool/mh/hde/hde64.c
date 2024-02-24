@@ -5,6 +5,9 @@
  *
  */
 
+#pragma warning( disable : 4206 )
+
+
 #if defined(_M_X64) || defined(__x86_64__)
 
 #include "hde64.h"

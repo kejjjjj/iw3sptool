@@ -139,16 +139,16 @@ void CL_AddDebugString(float* xyz, float* color, float scale, char* text, int du
 
 std::optional<ivec2> WorldToScreen(const fvec3& location)
 {
-	const refdef_s* refdef = &cgs->refdef;
+	const refdef_s* rd = &cgs->refdef;
 
 	const int centerX = 640 / 2;
 	const int centerY = 480 / 2;
 
-	const fvec3 vright = refdef->viewaxis[1];
-	const fvec3 vup = refdef->viewaxis[2];
-	const fvec3 vfwd = refdef->viewaxis[0];
+	const fvec3 vright = rd->viewaxis[1];
+	const fvec3 vup = rd->viewaxis[2];
+	const fvec3 vfwd = rd->viewaxis[0];
 
-	const fvec3 vLocal = location - fvec3(refdef->vieworg);
+	const fvec3 vLocal = location - fvec3(rd->vieworg);
 	fvec3 vTransform;
 
 	vTransform.x = vLocal.dot(vright);

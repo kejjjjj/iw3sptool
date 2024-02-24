@@ -3328,6 +3328,10 @@ struct cbrush_t
 	fvec3 get_origin() const noexcept {
 		return { maxs[0] + (maxs[0] - mins[0]) / 2, maxs[1] + (maxs[1] - mins[1]) / 2, maxs[2] + (maxs[0] - mins[0]) / 2 };
 	}
+	bool has_collision() const noexcept
+	{
+		return (contents & MASK_PLAYERSOLID) != 0;
+	}
 };
 struct scrMemTreePub_t
 {

@@ -77,29 +77,24 @@ void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string
 
 	thread_exists = false;
 	
-	rb_requesting_to_stop_rendering = true;
+	__brush::rb_requesting_to_stop_rendering = true;
 
 
 	ents.clear();
-	std::string classname_s;
 	for (int i = 0; i < l->num_entities; i++) {
 
 
-		classname_s = Scr_GetString(l->gentities[i].classname);
-
-		if (CM_IsMatchingFilter(filters, (char*)classname_s.c_str()) == false)
+		if (CM_IsMatchingFilter(filters, Scr_GetString(l->gentities[i].classname)) == false)
 			continue;
 
 		ents.push_back(&l->gentities[i]);
-
-			
 		++ents.spawned_entities;
 	}
 
 
 	//std::cout << "a total of " << ents.size() << " entities\n";
 
-	rb_requesting_to_stop_rendering = false;
+	__brush::rb_requesting_to_stop_rendering = false;
 
 }
 __declspec(naked) void G_ParseEntityFieldsASM()
@@ -273,7 +268,6 @@ __declspec(naked) void G_SpawnASM2()
 }
 void G_LoadGameAAA()
 {
-	std::cout << "hello!\n";
 	gameEntities::getInstance().clear();
 	gameEntities::getInstance().time_since_loadgame = Sys_MilliSeconds();
 
@@ -282,62 +276,13 @@ void G_LoadGameAAA()
 }
 void G_LoadGame_f()
 {
-	std::cout << "hello!\n";
 
 	find_hook(hookEnums_e::HOOK_LOADGAME).cast_call<void(*)()>();
 	gameEntities::getInstance().clear();
 	gameEntities::getInstance().time_since_loadgame = Sys_MilliSeconds();
 	gameEntities::getInstance().it_is_ok_to_load_entities = false;
-
-	std::cout << "creating the thread\n";
 	std::thread(update_entities_thread).detach();
 
 	return;
 	
-}
-char* G_GetEntityKey(gentity_s* g)
-{
-	if (!g)
-		return nullptr;
-
-	auto field = ent_fields;
-
-	for (int i = 0;; i++) {
-
-		char* v = Scr_GetString(i);
-
-		if (!v)
-			return 0;
-
-		std::cout << '[' << i << ']' << v << '\n';
-
-	}
-	return 0;
-	while (field) {
-
-		if (field->name == nullptr)
-			break;
-		
-		for (int i = 0; i < level->num_entities; i++) {
-
-			auto key = *(WORD*)(&g->s.loopSound + field->ofs);
-
-			
-			if (key) {
-				if (level->gentities[i].targetname == key) {
-					std::cout << "[" << g->s.loopSound << "]: " << field->name << " = " << Scr_GetString(g->targetname) << '\n';
-					break;
-
-
-				}
-			}
-
-		}
-
-		++field;
-
-	}
-
-	return nullptr;
-
 }

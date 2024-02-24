@@ -33,13 +33,14 @@ void CG_Init()
 
     CG_CreatePermaHooks();
 
-    dvar_limits l;
-    dvar_value v;
+    dvar_limits l{};
+    dvar_value v{};
 
     v.integer = 0;
 
     static const char* poly_types[] = {"Edges", "Polygons"};
     static const char* showCollisionNames[] = { "Disabled", "Brushes", "Terrain", "Both"};
+    static const char* elevator_types[] = { "Disabled", "Enabled", "Include Corners" };
 
 
     l.enumeration.stringCount = 4;
@@ -75,8 +76,14 @@ void CG_Init()
     v.enabled = false;
 
     Dvar_RegisterNew("cm_onlyBounces", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be bounced", v, l);
-    Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be elevated", v, l);
 
+    l.enumeration.stringCount = 3;
+    l.enumeration.strings = elevator_types;
+    v.integer = 0;
+
+    Dvar_RegisterNew("cm_onlyElevators", dvar_type::enumeration, dvar_flags::none, "Only display surfaces which can be elevated", v, l);
+
+    v.enabled = false;
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
     Dvar_RegisterNew("cm_entityInfo", dvar_type::boolean, dvar_flags::saved, "Display brushmodel information", v, l);
     v.enabled = true;
@@ -107,7 +114,7 @@ void CG_Init()
     Dvar_RegisterNew("pm_fixed", dvar_type::boolean, dvar_flags::none, "forces fps to com_maxfps value even if the computer can't reach the fps", v, l);
     Dvar_RegisterNew("pm_multiplayer", dvar_type::boolean, dvar_flags::none, "fps behaves the same way as it does in multiplayer", v, l);
 
-    Dvar_RegisterNew("pm_coordinates", dvar_type::boolean, dvar_flags::none, "show player coordinates", v, l);
+    Dvar_RegisterNew("pm_coordinates", dvar_type::boolean, dvar_flags::saved, "show player coordinates", v, l);
 
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 

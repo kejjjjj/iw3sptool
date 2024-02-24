@@ -1,9 +1,12 @@
 #include "pch.hpp"
 
-void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const BYTE* color, bool two_sided, bool depthTest, bool show)
+void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const float* c, bool two_sided, bool depthTest)
 {
 	if (n_points < 3)
 		return;
+
+	BYTE color[4];
+	R_ConvertColorToBytes(c, color);
 
 	Material material = *rgp->whiteMaterial;
 
@@ -48,9 +51,9 @@ void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const BYTE* 
 
 	for (idx = 2; idx < n_points; ++idx)
 	{
-		tess->indices[tess->indexCount + 0] = tess->vertexCount;
-		tess->indices[tess->indexCount + 1] = (idx + tess->vertexCount);
-		tess->indices[tess->indexCount + 2] = (idx + tess->vertexCount - 1);
+		tess->indices[tess->indexCount + 0] = static_cast<short>(tess->vertexCount);
+		tess->indices[tess->indexCount + 1] = static_cast<short>(idx + tess->vertexCount);
+		tess->indices[tess->indexCount + 2] = static_cast<short>(idx + tess->vertexCount - 1);
 		tess->indexCount += 3;
 	}
 
@@ -60,7 +63,7 @@ void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const BYTE* 
 
 
 }
-int RB_AddDebugLine(GfxPointVertex* verts, char depthTest, const vec_t* start, vec_t* end, const BYTE* color, int vertCount)
+int RB_AddDebugLine(GfxPointVertex* verts, const vec_t* start, vec_t* end, const BYTE* color, int vertCount)
 {
 
 	int _vc = vertCount;
@@ -188,21 +191,6 @@ char RB_DrawDebug(GfxViewParms* viewParms)
 	return detour_func.cast_call<char(*)(GfxViewParms*)>(viewParms);
 }
 
-void RB_DrawTriangleOutline(const fvec3& a1, const fvec3& b1, const fvec3& c1, vec4_t color, int width, bool depthTest)
-{
-	GfxPointVertex verts[6]{};
-
-	BYTE c[4];
-
-	R_ConvertColorToBytes(color, c);
-
-	RB_AddDebugLine(verts, depthTest, a1, b1, c, 0);
-	RB_AddDebugLine(verts, depthTest, a1, c1, c, 2);
-	RB_AddDebugLine(verts, depthTest, b1, c1, c, 4);
-
-	RB_DrawLines3D(3, width, verts, depthTest);
-
-}
 void R_AddDebugBox(const float* mins, const float* maxs, DebugGlobals* debugGlobalsEntry, float* color)
 {
 	__asm

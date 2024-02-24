@@ -7,43 +7,11 @@ void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross) {
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-vec_t VectorLength(const vec3_t v) {
-	return sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
-
-vec_t VectorLengthSquared(const vec3_t v) {
-	return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
-}
-
-vec_t Distance(const vec3_t p1, const vec3_t p2) {
-	vec3_t v;
-
-	VectorSubtract(p2, p1, v);
-	return VectorLength(v);
-}
-
-vec_t DistanceSquared(const vec3_t p1, const vec3_t p2) {
-	vec3_t v;
-
-	VectorSubtract(p2, p1, v);
-	return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-}
-
-
 void VectorInverse(vec3_t v) {
 	v[0] = -v[0];
 	v[1] = -v[1];
 	v[2] = -v[2];
 }
-
-int VectorCompare(const vec3_t v1, const vec3_t v2) {
-	if (v1[0] != v2[0] || v1[1] != v2[1] || v1[2] != v2[2]) {
-		return 0;
-	}
-
-	return 1;
-}
-
 
 vec_t VectorNormalize(vec3_t v) {
 	float length, ilength;
@@ -79,14 +47,7 @@ vec_t VectorNormalize2(const vec3_t v, vec3_t out) {
 	return length;
 
 }
-void MatrixTransformVector43(const float* in1, const float(*in2)[3], float* out)
-{
-	*out = ((*in1 * (*in2)[0]) + (((*in2)[6] * in1[2]) + ((*in2)[3] * in1[1]))) + (*in2)[9];
-	out[1] = (((*in2)[4] * in1[1]) + (((*in2)[1] * *in1) + ((*in2)[7] * in1[2]))) + (*in2)[10];
-	out[2] = (((*in2)[5] * in1[1]) + (((*in2)[2] * *in1) + ((*in2)[8] * in1[2]))) + (*in2)[11];
-}
-
-int BoxOnPlaneSide(const vec3_t emins, const vec3_t emaxs, cplane_s* p) {
+int BoxOnPlaneSide(const fvec3& emins, const fvec3& emaxs, cplane_s* p) {
 	float dist1, dist2;
 
 	switch (p->signbits)
@@ -194,7 +155,7 @@ void SetPlaneSignbits(cplane_s* out)
 			bits |= 1 << j;
 		}
 	}
-	out->signbits = bits;
+	out->signbits = static_cast<char>(bits);
 }
 //bool PointInFront(const fvec3& origin, const fvec3& target, const cardinalDirection_e d)
 //{
@@ -274,7 +235,7 @@ fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation)
 	fvec3 vWork, va;
 	VectorCopy(vIn, va);
 	VectorCopy(va, vWork);
-	int nIndex[3][2];
+	int nIndex[3][2]{};
 	nIndex[0][0] = 1; nIndex[0][1] = 2;
 	nIndex[1][0] = 2; nIndex[1][1] = 0;
 	nIndex[2][0] = 0; nIndex[2][1] = 1;
@@ -283,7 +244,7 @@ fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation)
 	{
 		if (vRotation[i] != 0.000000f)
 		{
-			float dAngle = vRotation[i] * PI / 180.0;
+			float dAngle = vRotation[i] * PI / 180.0f;
 			float c = cos(dAngle);
 			float s = sin(dAngle);
 			vWork[nIndex[i][0]] = va[nIndex[i][0]] * c - va[nIndex[i][1]] * s;
@@ -305,4 +266,224 @@ fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation, const fvec3& vOrigi
 	fvec3 vTemp2 = VectorRotate(vTemp, vRotation2);
 
 	return vTemp2 + vOrigin;
+}
+
+void PlaneFromPointsASM(float* plane, float* v0, float* v1, float* v2)
+{
+	static constexpr DWORD fnc = 0x57E7D0;
+	__asm
+	{
+		mov esi, v0;
+		mov edi, plane;
+		mov ecx, v1;
+		mov edx, v2;
+		call fnc;
+	}
+}
+void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]) {
+	out[0][0] = in1[0][0] * in2[0][0] + in1[0][1] * in2[1][0] + in1[0][2] * in2[2][0];
+	out[0][1] = in1[0][0] * in2[0][1] + in1[0][1] * in2[1][1] + in1[0][2] * in2[2][1];
+	out[0][2] = in1[0][0] * in2[0][2] + in1[0][1] * in2[1][2] + in1[0][2] * in2[2][2];
+	out[1][0] = in1[1][0] * in2[0][0] + in1[1][1] * in2[1][0] + in1[1][2] * in2[2][0];
+	out[1][1] = in1[1][0] * in2[0][1] + in1[1][1] * in2[1][1] + in1[1][2] * in2[2][1];
+	out[1][2] = in1[1][0] * in2[0][2] + in1[1][1] * in2[1][2] + in1[1][2] * in2[2][2];
+	out[2][0] = in1[2][0] * in2[0][0] + in1[2][1] * in2[1][0] + in1[2][2] * in2[2][0];
+	out[2][1] = in1[2][0] * in2[0][1] + in1[2][1] * in2[1][1] + in1[2][2] * in2[2][1];
+	out[2][2] = in1[2][0] * in2[0][2] + in1[2][1] * in2[1][2] + in1[2][2] * in2[2][2];
+}
+void ProjectPointOnPlane(vec3_t dst, const vec3_t p, const vec3_t normal) {
+	float d{};
+	vec3_t n{};
+	float inv_denom = {};
+
+	inv_denom = 1.0F / DotProduct(normal, normal);
+
+	d = DotProduct(normal, p) * inv_denom;
+
+	n[0] = normal[0] * inv_denom;
+	n[1] = normal[1] * inv_denom;
+	n[2] = normal[2] * inv_denom;
+
+	dst[0] = p[0] - d * n[0];
+	dst[1] = p[1] - d * n[1];
+	dst[2] = p[2] - d * n[2];
+}
+void PerpendicularVector(vec3_t dst, const vec3_t src) {
+	int pos = {};
+	int i = {};
+	float minelem = 1.0F;
+	vec3_t tempvec = {};
+
+	/*
+	** find the smallest magnitude axially aligned vector
+	*/
+	for (pos = 0, i = 0; i < 3; i++)
+	{
+		if (fabs(src[i]) < minelem) {
+			pos = i;
+			minelem = fabs(src[i]);
+		}
+	}
+	tempvec[0] = tempvec[1] = tempvec[2] = 0.0F;
+	tempvec[pos] = 1.0F;
+
+	/*
+	** project the point onto the plane defined by src
+	*/
+	ProjectPointOnPlane(dst, tempvec, src);
+
+	/*
+	** normalize the result
+	*/
+	VectorNormalize(dst);
+}
+
+void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point,
+	float degrees) {
+	float m[3][3] = {};
+	float im[3][3] = {};
+	float zrot[3][3] = {};
+	float tmpmat[3][3] = {};
+	float rot[3][3] = {};
+	int i = {};
+	vec3_t vr = {}, vup = {}, vf = {};
+	float rad = {};
+
+	vf[0] = dir[0];
+	vf[1] = dir[1];
+	vf[2] = dir[2];
+
+	PerpendicularVector(vr, dir);
+	CrossProduct(vr, vf, vup);
+
+	m[0][0] = vr[0];
+	m[1][0] = vr[1];
+	m[2][0] = vr[2];
+
+	m[0][1] = vup[0];
+	m[1][1] = vup[1];
+	m[2][1] = vup[2];
+
+	m[0][2] = vf[0];
+	m[1][2] = vf[1];
+	m[2][2] = vf[2];
+
+	memcpy(im, m, sizeof(im));
+
+	im[0][1] = m[1][0];
+	im[0][2] = m[2][0];
+	im[1][0] = m[0][1];
+	im[1][2] = m[2][1];
+	im[2][0] = m[0][2];
+	im[2][1] = m[1][2];
+
+	memset(zrot, 0, sizeof(zrot));
+	zrot[0][0] = zrot[1][1] = zrot[2][2] = 1.0F;
+
+	rad = DEG2RAD(degrees);
+	zrot[0][0] = cos(rad);
+	zrot[0][1] = sin(rad);
+	zrot[1][0] = -sin(rad);
+	zrot[1][1] = cos(rad);
+
+	MatrixMultiply(m, zrot, tmpmat);
+	MatrixMultiply(tmpmat, im, rot);
+
+	for (i = 0; i < 3; i++) {
+		dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
+	}
+}
+
+fvec3 AxisToAngles(vec3_t axis[3]) {
+	vec3_t angles{};
+	vec3_t right{}, roll_angles{}, tvec{};
+	fvec3 axisDefault[3] = { { 1, 0, 0 }, { 0, 1, 0 }, { 0, 0, 1 } };
+
+	
+
+	// first get the pitch and yaw from the forward vector
+	vectoangles(axis[0], angles);
+
+	// now get the roll from the right vector
+	VectorCopy(axis[1], right);
+	// get the angle difference between the tmpAxis[2] and axis[2] after they have been reverse-rotated
+	RotatePointAroundVector(tvec, axisDefault[2], right, -angles[YAW]);
+	RotatePointAroundVector(right, axisDefault[1], tvec, -angles[PITCH]);
+	// now find the angles, the PITCH is effectively our ROLL
+	vectoangles(right, roll_angles);
+	roll_angles[PITCH] = AngleNormalize180(roll_angles[PITCH]);
+	// if the yaw is more than 90 degrees difference, we should adjust the pitch
+	if (DotProduct(right, axisDefault[1]) < 0) {
+		if (roll_angles[PITCH] < 0) {
+			roll_angles[PITCH] = -90 + (-90 - roll_angles[PITCH]);
+		}
+		else {
+			roll_angles[PITCH] = 90 + (90 - roll_angles[PITCH]);
+		}
+	}
+
+	angles[ROLL] = -roll_angles[PITCH];
+
+	return angles;
+}
+
+void vectoangles(const vec3_t value1, vec3_t angles) {
+	float forward;
+	float yaw, pitch;
+
+	if (value1[1] == 0 && value1[0] == 0) {
+		yaw = 0;
+		if (value1[2] > 0) {
+			pitch = 90;
+		}
+		else {
+			pitch = 270;
+		}
+	}
+	else {
+		if (value1[0]) {
+			yaw = (atan2(value1[1], value1[0]) * 180 / M_PI);
+		}
+		else if (value1[1] > 0) {
+			yaw = 90;
+		}
+		else {
+			yaw = 270;
+		}
+		if (yaw < 0) {
+			yaw += 360;
+		}
+		forward = sqrt(value1[0] * value1[0] + value1[1] * value1[1]);
+		pitch = (atan2(value1[2], forward) * 180 / M_PI);
+		if (pitch < 0) {
+			pitch += 360;
+		}
+	}
+
+	angles[PITCH] = -pitch;
+	angles[YAW] = yaw;
+	angles[ROLL] = 0;
+}
+float AngleNormalizePI(float angle)
+{
+	angle = fmodf(angle + (float)M_PI, 2 * (float)M_PI);
+	return angle < 0 ? angle + (float)M_PI : angle - (float)M_PI;
+}
+float AngleNormalize360(float angle) {
+	return (360.0f / 65536) * ((int)(angle * (65536 / 360.0f)) & 65535);
+}
+float AngleNormalize180(float angle) {
+	angle = AngleNormalize360(angle);
+	if (angle > 180.0) {
+		angle -= 360.0;
+	}
+	return angle;
+}
+float AngleNormalize90(float angle)
+{
+	return fmodf(angle + 180 + 90, 180) - 90;
+
+}
+float AngleDelta(float angle1, float angle2) {
+	return AngleNormalize180(angle1 - angle2);
 }

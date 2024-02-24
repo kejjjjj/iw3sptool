@@ -24,21 +24,18 @@ namespace hook //a VERY basic namespace to do the most basic things!
 		~hookobj() = default;
 		bool init(auto org, const LPVOID detour/*, const LPVOID target = (LPVOID)org*/, const bool enabled = true)
 		{
-			std::cout << "calling init\n";
 			pTarget = (LPVOID)org;
 			pDetour = detour;
 			orgFnc = reinterpret_cast<T*>((DWORD)org);
 			if (ok = (pTarget && pDetour), !ok) {
-				FatalError("either target or detour is nullptr");
-				return false;
+				return FatalError("either target or detour is nullptr"), false;
 			}
 #pragma warning(suppress : 26812)
 			MH_STATUS status = MH_CreateHook(pTarget, pDetour, &(LPVOID&)orgFnc);
-			std::cout << "create hook!\n";
 			if (ok = (status == MH_OK), !ok) {
 
 				if (status != MH_ERROR_ALREADY_CREATED) {
-					FatalError(MH_StatusToString(status));
+					return FatalError(MH_StatusToString(status)), false;
 				}
 
 				return false;
@@ -47,10 +44,7 @@ namespace hook //a VERY basic namespace to do the most basic things!
 				return true;
 
 			if (status = enable(), status != MH_OK) {
-				FatalError(MH_StatusToString(status));
-
-
-				return false;
+				return FatalError(MH_StatusToString(status)), false;
 			}
 			return 1;
 		}bool release() {
@@ -60,14 +54,14 @@ namespace hook //a VERY basic namespace to do the most basic things!
 #pragma warning(suppress : 26812)
 			MH_STATUS status;
 			if (status = disable(), status != MH_OK) {
-				FatalError(MH_StatusToString(status));
-				return false;
+				return FatalError(MH_StatusToString(status)), false;
+
 			}
 
 			status = MH_RemoveHook(pTarget);
 			if (ok = (status == MH_OK), !ok) {
-				FatalError(MH_StatusToString(status));
-				return false;
+				return FatalError(MH_StatusToString(status)), false;
+
 			}
 			pTarget = pDetour = 0;
 			return 1;

@@ -126,9 +126,6 @@
     <ClInclude Include="sys_tools.hpp">
       <Filter>Source Files\engine</Filter>
     </ClInclude>
-    <ClInclude Include="g_entity.hpp">
-      <Filter>Source Files\g</Filter>
-    </ClInclude>
     <ClInclude Include="cm_terrain.hpp">
       <Filter>Source Files\cm</Filter>
     </ClInclude>
@@ -137,6 +134,15 @@
     </ClInclude>
     <ClInclude Include="bg_pmove.hpp">
       <Filter>Source Files\pm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm_typedefs.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm_entity.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm_model.hpp">
+      <Filter>Source Files\cm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -203,9 +209,6 @@
     <ClCompile Include="sys_tools.cpp">
       <Filter>Source Files\engine</Filter>
     </ClCompile>
-    <ClCompile Include="g_entity.cpp">
-      <Filter>Source Files\g</Filter>
-    </ClCompile>
     <ClCompile Include="cm_terrain.cpp">
       <Filter>Source Files\cm</Filter>
     </ClCompile>
@@ -214,6 +217,15 @@
     </ClCompile>
     <ClCompile Include="bg_pmove.cpp">
       <Filter>Source Files\pm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm_typedefs.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm_entity.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm_model.cpp">
+      <Filter>Source Files\cm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

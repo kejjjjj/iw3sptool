@@ -6,3 +6,5 @@ void PmoveSingleASM();
 void PM_SprintFixASM();
 
 void PM_OverBounce(pmove_t* pm, pml_t* pml);
+
+float CG_GetPlayerHitboxHeight(playerState_s* ps);

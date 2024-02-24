@@ -135,8 +135,6 @@ typedef vec_t vec4_t[4];
 #pragma comment(lib, "d3d9.lib")
 #pragma comment(lib, "d3dx9.lib")
 
-#pragma warning (1007 : disable)
-
 //DIRECTX
 #include <d3d9.h>
 #include <d3dx9.h>
@@ -167,19 +165,21 @@ typedef vec_t vec4_t[4];
 
 #include "rb_endscene.hpp"
 
-#include "cm_brush.hpp"
-#include "cm_terrain.hpp"
-
 #include "e_utilities.hpp"
-
 
 #include "com_channel.hpp"
 #include "com_vector.hpp"
 
-#include "g_entity.hpp"
-
-
 #include "sys_tools.hpp"
+
+
+#include "cm_typedefs.hpp"
+#include "cm_brush.hpp"
+#include "cm_terrain.hpp"
+#include "cm_entity.hpp"
+#include "cm_model.hpp"
+
+
 
 #include "bg_pmove.hpp"
 

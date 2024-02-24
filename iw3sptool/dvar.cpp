@@ -43,7 +43,7 @@ void OnDvarsModified()
 
 	}
 
-	if (cm_onlyElevators->current.enabled && cm_onlyElevators->modified) {
+	if (cm_onlyElevators->current.integer && cm_onlyElevators->modified) {
 		cm_onlyBounces->current.enabled = false;
 		cm_onlyBounces->latched.enabled = false;
 		cm_onlyBounces->modified = false;
@@ -51,8 +51,8 @@ void OnDvarsModified()
 	}
 
 	if (cm_onlyBounces->current.enabled && cm_onlyBounces->modified) {
-		cm_onlyElevators->current.enabled = false;
-		cm_onlyElevators->latched.enabled = false;
+		cm_onlyElevators->current.integer = false;
+		cm_onlyElevators->latched.integer = false;
 		cm_onlyElevators->modified = false;
 	}
 
@@ -60,13 +60,19 @@ void OnDvarsModified()
 
 	if (old_mapname != Dvar_FindMalleableVar("mapname")->current.string) {
 
-		s_brushes.clear();
-		cm_terrainpoints.clear();
+		__brush::rb_requesting_to_stop_rendering = true;
+
+		CClipMap::clear();
+		gameEntities::getInstance().clear(true);
+		entity_globals::ent_fields.clear();
 
 		if(gameEntities::getInstance().empty() == false)
 			gameEntities::getInstance().clear(true);
 
 		old_mapname = Dvar_FindMalleableVar("mapname")->current.string;
+
+		__brush::rb_requesting_to_stop_rendering = false;
+
 	}
 
 }

@@ -2,19 +2,15 @@
 
 #include "pch.hpp"
 
-int VectorCompare(const vec3_t v1, const vec3_t v2);
-vec_t VectorLength(const vec3_t v);
-vec_t VectorLengthSquared(const vec3_t v);
-vec_t Distance(const vec3_t p1, const vec3_t p2);
-vec_t DistanceSquared(const vec3_t p1, const vec3_t p2);
 void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross);
 vec_t VectorNormalize(vec3_t v);       // returns vector length
-void VectorNormalizeFast(vec3_t v);     // does NOT return vector length, uses rsqrt approximation
 vec_t VectorNormalize2(const vec3_t v, vec3_t out);
 void VectorInverse(vec3_t v);
 
-void MatrixTransformVector43(const float* in1, const float(*in2)[3], float* out);
-int BoxOnPlaneSide(const vec3_t emins, const vec3_t emaxs, struct cplane_s* p);
+int BoxOnPlaneSide(const fvec3& emins, const fvec3& emaxs, struct cplane_s* p);
+
+void PlaneFromPointsASM(float* plane, float* v0, float* v1, float* v2);
+
 
 void BuildFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumPlanes);
 void SetPlaneSignbits(cplane_s* out);
@@ -28,3 +24,16 @@ void AnglesToAxis(const vec3_t angles, vec3_t axis[3]);
 
 fvec3 VectorRotate(const fvec3& va, const fvec3& vb);
 fvec3 VectorRotate(const fvec3& vIn, const fvec3& vRotation, const fvec3& vOrigin);
+
+void MatrixMultiply(float in1[3][3], float in2[3][3], float out[3][3]);
+void PerpendicularVector(vec3_t dst, const vec3_t src);
+void RotatePointAroundVector(vec3_t dst, const vec3_t dir, const vec3_t point, float degrees);
+void vectoangles(const vec3_t value1, vec3_t angles);
+fvec3 AxisToAngles(vec3_t axis[3]);
+
+float AngleNormalizePI(float angle);
+float AngleNormalize360(float angle);
+float AngleNormalize180(float angle);
+float AngleNormalize90(float angle);
+
+float AngleDelta(float angle1, float angle2);

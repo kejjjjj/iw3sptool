@@ -26,6 +26,14 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+//nice library
+#pragma warning( disable : 4244 )
+#pragma warning( disable : 4100 )
+#pragma warning( disable : 26454 )
+#pragma warning( disable : 4310 )
+#pragma warning( disable : 4201 )
+
+
 #include <windows.h>
 #include <tlhelp32.h>
 #include <limits.h>

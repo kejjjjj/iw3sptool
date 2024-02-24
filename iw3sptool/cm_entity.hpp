@@ -60,7 +60,7 @@ public:
 	static std::unique_ptr<gameEntity> createEntity(gentity_s* gent);
 	static bool is_supported_entity(gentity_s* g) { return createEntity(g).get(); }
 	virtual gentity_type get_type() const = 0;
-	virtual void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
+	virtual void render(const cm_renderinfo& info) = 0;
 	virtual void render2d(float draw_dist) = 0;
 
 protected:
@@ -93,24 +93,25 @@ public:
 				brushmodel bmodel(g);
 
 				bmodel.linked_brush = &cm->brushes[brushIdx];
-				bmodel.brush_geometry = CM_GetBrushWindings(bmodel.linked_brush, vec4_t{ 0.984f, 0.494f, 0.004f, 0.3f });
+				auto result = CM_GetBrushPoints(bmodel.linked_brush, vec4_t{ 0.984f, 0.494f, 0.004f });
+				bmodel.brush_geometry = *dynamic_cast<cm_brush*>(result.get());
 				bmodel.original_geometry = bmodel.brush_geometry;
 
 				brushmodels.push_back(std::move(std::make_unique<brushmodel>(bmodel)));
 			}
 		}
-		if (const auto t = CM_GetTerrainTriangles(leaf, vec4_t{1,0,1,1})) {
+		if (const auto t = CM_GetTerrainTriangles(leaf, {"all"} )) {
 			terrainmodel tm(g);
 
 			tm.leaf = leaf;
-			tm.terrain = t.value();
+			tm.terrain = *dynamic_cast<cm_terrain*>(t.get());
 			tm.original_terrain = tm.terrain;
 			
 			brushmodels.push_back(std::move(std::make_unique<terrainmodel>(tm)));
 		}
 
 	}
-	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
+	void render(const cm_renderinfo& info) override {
 
 		const showCollisionType cm_type = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 		if (*origin != oldOrigin || *orientation != oldOrientation) {
@@ -129,20 +130,7 @@ public:
 				b->get_type() == brushmodel_type::TERRAIN && cm_type == showCollisionType::BRUSHES)
 				continue;
 
-			b->render(*origin, frustum_planes, numPlanes, poly_type, depth_test, drawdist);
-		}
-		for (auto& b : brushmodels) {
-
-			const auto base = b.get();
-
-			if (cm_type != showCollisionType::BOTH) {
-				if (base->get_type() == brushmodel_type::BRUSH && cm_type != showCollisionType::BRUSHES)
-					return;
-				else if (base->get_type() == brushmodel_type::TERRAIN && cm_type != showCollisionType::TERRAIN) {
-					return;
-				}
-			}
-
+			b->render(*origin, info);
 		}
 
 	}
@@ -167,7 +155,7 @@ public:
 				}
 
 				if (auto op = WorldToScreen(center)) {
-					auto& p = op.value();
+					auto p = (fvec2)op.value();
 					float scale = R_ScaleByDistance(dist) * 0.2f;
 					R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
 
@@ -195,7 +183,7 @@ private:
 		brushmodelbase(gentity_s* gent) : g(gent){}
 		virtual ~brushmodelbase() = default;
 		virtual brushmodel_type get_type() const noexcept = 0;
-		virtual void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) = 0;
+		virtual void render(const fvec3& origin, const cm_renderinfo& info) = 0;
 		virtual void on_position_changed(const fvec3& origin, const fvec3& orientation) noexcept(true) = 0;
 		virtual fvec3 get_center() const noexcept(true) = 0;
 
@@ -207,33 +195,48 @@ private:
 		brushmodel(gentity_s* gent) : brushmodelbase(gent) {};
 		~brushmodel() = default;
 		cbrush_t* linked_brush = 0;
-		showcol_brush brush_geometry;
-		showcol_brush original_geometry;
+		cm_brush brush_geometry;
+		cm_brush original_geometry;
 		brushmodel_type get_type() const noexcept override { return brushmodel_type::BRUSH; }
-		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
+		void render(const fvec3& _origin, const cm_renderinfo& info) override {
 
 			if (brush_geometry.brush == nullptr)
 				return;
 
-			fvec3 mins = origin + fvec3(linked_brush->mins);
-			fvec3 maxs = origin + fvec3(linked_brush->maxs);
+			fvec3 mins = _origin + fvec3(linked_brush->mins);
+			fvec3 maxs = _origin + fvec3(linked_brush->maxs);
 
-			if (brush_geometry.origin.dist(predictedPlayerState->origin) > drawdist)
+			if (brush_geometry.origin.dist(predictedPlayerState->origin) > info.draw_dist)
 				return;
 
-			if (CM_BoundsInView(mins, maxs, frustum_planes, numPlanes)) {
-				RB_RenderWinding(brush_geometry, poly_type, depth_test, drawdist, false, false);
+			if (CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes) == false)
+				return;
 
+			for (auto& w : brush_geometry.windings)
+			{
+				vec4_t c = { 0,1,1,0.3f };
+
+				c[0] = w.color[0];
+				c[1] = w.color[1];
+				c[2] = w.color[2];
+				c[3] = info.alpha;
+
+
+				if (info.as_polygons)
+					RB_DrawCollisionPoly(w.points.size(), (float(*)[3])w.points.data(), c, info.depth_test);
+				else
+					RB_DrawCollisionEdges(w.points.size(), (float(*)[3])w.points.data(), c, info.depth_test);
 			}
+
 		}
 
-		void on_position_changed(const fvec3& origin, const fvec3& delta_angles) noexcept(true) override {
+		void on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) override {
 			brush_geometry = original_geometry;
-			brush_geometry.origin = origin;
+			brush_geometry.origin = _origin;
 
 			for (auto& winding : brush_geometry.windings) {
 				for (auto& w : winding.points) {
-					w += origin;
+					w += _origin;
 					
 					w = VectorRotate(w, delta_angles, brush_geometry.origin);
 				}
@@ -255,8 +258,8 @@ private:
 		~terrainmodel() = default;
 		brushmodel_type get_type() const noexcept override { return brushmodel_type::TERRAIN; }
 
-		void render(const fvec3& origin, cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
-			CM_ShowTerrain(&terrain, frustum_planes, poly_type, depth_test, drawdist, false, false);
+		void render([[maybe_unused]]const fvec3& _origin, const cm_renderinfo& info) override {
+			terrain.render(info);
 		}
 		void on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) override {
 			terrain = original_terrain;
@@ -276,12 +279,6 @@ private:
 		}
 		fvec3 get_center() const noexcept(true) override {
 			return g->r.currentOrigin;
-			//auto& front = terrain.tris.front();
-
-			//const fvec3 mins = front.get_mins();
-			//const fvec3 maxs = front.get_maxs();
-
-			//return  mins + (maxs - mins) / 2;
 
 		}
 	};
@@ -306,7 +303,7 @@ public:
 		return gentity_type::SPAWNER;
 	}
 
-	void render(cplane_s* frustum_planes, int numPlanes, const polyType poly_type, bool depth_test, float drawdist) override {
+	void render(const cm_renderinfo& info) override {
 
 		if (*origin != oldOrigin || *orientation != oldOrientation) {
 			
@@ -316,22 +313,19 @@ public:
 			org.z += (maxs.z - g->r.mins[2]) / 2;
 			maxs.z /= 2;
 
-
 			geometry = CM_CreateSphere(org, 1.f, 5, 5, maxs);
 
 			oldOrigin = *origin;
 			oldOrientation = *orientation;
 		}
 
-
-
-		if (origin->dist(predictedPlayerState->origin) > drawdist)
+		if (origin->dist(predictedPlayerState->origin) > info.draw_dist)
 			return;
 
-		if (poly_type == polyType::POLYS)
-			RB_DrawCollisionPoly(geometry.size(), (float(*)[3])geometry.data(), vec4_t{1,0,0,0.3f}, depth_test);
-		else if (poly_type == polyType::EDGES)
-			RB_DrawCollisionEdges(geometry.size(), (float(*)[3])geometry.data(), vec4_t{ 1,0,0,0.3f }, depth_test);
+		if (info.as_polygons)
+			RB_DrawCollisionPoly(geometry.size(), (float(*)[3])geometry.data(), vec4_t{1,0,0,0.3f}, info.depth_test);
+		else
+			RB_DrawCollisionEdges(geometry.size(), (float(*)[3])geometry.data(), vec4_t{ 1,0,0,0.3f }, info.depth_test);
 
 	}
 	void render2d(float draw_dist) override 
@@ -357,7 +351,7 @@ public:
 			}
 
 			if (auto op = WorldToScreen(center)) {
-				auto& p = op.value();
+				auto p = (fvec2)op.value();
 				float scale = R_ScaleByDistance(dist) * 0.2f;
 				R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
 
@@ -448,4 +442,3 @@ inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 
 	return nullptr;
 }
-char* G_GetEntityKey(gentity_s* g);

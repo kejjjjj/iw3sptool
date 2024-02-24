@@ -5,7 +5,7 @@
 
 inline DxGlobals* dx = (DxGlobals*)(0x01623F84);
 inline CInput* input = (CInput*)(0x00868734);
-inline Movement* move = (Movement*)(0x815EF8);
+//inline Movement* move = (Movement*)(0x815EF8);
 inline playerState_s* ps_loc = (playerState_s*)(0xE0DA00);
 inline playerState_s* predictedPlayerState = (playerState_s*)(0x714BA8);
 inline clipMap_t* cm = (clipMap_t*)(0xF788C8);
@@ -23,5 +23,6 @@ inline scrMemTreePub_t* gScrMemTreePub = reinterpret_cast<scrMemTreePub_t*>(0xFD
 inline int* bg_lastParsedWeaponIndex = reinterpret_cast<int*>(0x1E20A04);
 inline ent_field_t* ent_fields = reinterpret_cast<ent_field_t*>(0x67FFB8);
 inline cg_s* cgs = reinterpret_cast<cg_s*>(0x6FA590);
+inline GfxWorld* gfxWorld = reinterpret_cast<GfxWorld*>(0x189A048);
 
 inline clientUIActive_t* clientUI = reinterpret_cast<clientUIActive_t*>(0x85BD70);

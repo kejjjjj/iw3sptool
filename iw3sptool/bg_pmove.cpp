@@ -17,14 +17,13 @@ void Pmove(pmove_t* pm)
 		}
 	}
 
-	int cmdTime = 0;
 	int msec = 0;
 
 	static dvar_s* pm_fixed = Dvar_FindMalleableVar("pm_fixed");
 	static dvar_s* com_maxfps = Dvar_FindMalleableVar("com_maxfps");
 
 
-	int cur_msec = 1000.f / (com_maxfps->current.integer == 0 ? 1 : com_maxfps->current.integer);
+	int cur_msec = 1000 / (com_maxfps->current.integer == 0 ? 1 : com_maxfps->current.integer);
 
 	if (pm_fixed->current.enabled == false)
 		cur_msec = 66;
@@ -108,29 +107,29 @@ __declspec(naked) void PM_SprintFixASM()
 }
 void Sys_SnapVector(float* v) {
 
-	int i;
-	float f;
+	int i{};
+	float f{};
 
 	f = *v;
 	__asm fld f;
 	__asm fistp i;
-	*v = i;
+	*v = static_cast<float>(i);
 	v++;
 	f = *v;
 	__asm fld f;
 	__asm fistp i;
-	*v = i;
+	*v = static_cast<float>(i);
 	v++;
 	f = *v;
 	__asm fld f;
 	__asm fistp i;
-	*v = i;
+	*v = static_cast<float>(i);
 
 
 }
 void PM_OverBounce(pmove_t* pm, pml_t* pml)
 {
-	vec3_t move;
+	vec3_t move{};
 
 	move[0] = pm->ps->origin[0] - pml->previous_origin[0];
 	move[1] = pm->ps->origin[1] - pml->previous_origin[1];
@@ -142,7 +141,7 @@ void PM_OverBounce(pmove_t* pm, pml_t* pml)
 
 	if (dot_speed * 0.25 > dot_div_frametime)
 	{
-		float inGameFramesPerSecond = 1.0 / pml->frametime;
+		float inGameFramesPerSecond = 1.0f / pml->frametime;
 		pm->ps->velocity[0] = inGameFramesPerSecond * move[0];
 		pm->ps->velocity[1] = inGameFramesPerSecond * move[1];
 		pm->ps->velocity[2] = inGameFramesPerSecond * move[2];
@@ -176,4 +175,11 @@ void PM_OverBounce(pmove_t* pm, pml_t* pml)
 		Sys_SnapVector(pm->ps->velocity);
 
 	return;
+}
+float CG_GetPlayerHitboxHeight(playerState_s* ps)
+{
+	std::unordered_map<int, int> stance = { {60, 70}, {40, 50}, {11, 30} };
+	float maxs = static_cast<float>(stance.find(int(ps->viewHeightTarget))->second);
+
+	return maxs;
 }

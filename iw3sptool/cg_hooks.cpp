@@ -18,7 +18,7 @@ void CG_CreateHooks()
 	hooktable.insert(hookEnums_e::HOOK_DRAWACTIVE,			hook::hookobj<void*>(0x4111D0, CG_DrawActive, TRUE));
 	hooktable.insert(hookEnums_e::HOOK_RB_ENDSCENE,			hook::hookobj<void*>(0x636D30, RB_DrawDebug, TRUE));
 
-	hooktable.insert(hookEnums_e::HOOK_BRUSH_ADJACENCY, hook::hookobj<void*>(0x59859C, __brush_hook::stealerino, TRUE));
+	hooktable.insert(hookEnums_e::HOOK_BRUSH_ADJACENCY, hook::hookobj<void*>(0x59859C, __brush::__asm_adjacency_winding, TRUE));
 
 	hooktable.insert(hookEnums_e::HOOK_FIRSTPERSON, hook::hookobj<void*>(0x42DB30, CG_OffsetFirstPersonView, TRUE));
 	hooktable.insert(hookEnums_e::HOOK_THIRDPERSON, hook::hookobj<void*>(0x42ED10, CG_OffsetThirdPersonViewASM, TRUE));

@@ -61,8 +61,8 @@ void CG_OffsetThirdPersonView()
 	float cg_thirdPersonAngle = Dvar_FindMalleableVar("cg_thirdPersonAngle")->current.value;
 	float cg_thirdPersonRange = Dvar_FindMalleableVar("cg_thirdPersonRange")->current.value;
 
-	float forwardScale = cos(cg_thirdPersonAngle/ 180 * M_PI);
-	float sideScale = sin(cg_thirdPersonAngle / 180 * M_PI);
+	float forwardScale = cos(cg_thirdPersonAngle/ 180.f * M_PI);
+	float sideScale = sin(cg_thirdPersonAngle / 180.f * M_PI);
 	VectorMA(view, -cg_thirdPersonRange * forwardScale, forward, view);
 	VectorMA(view, -cg_thirdPersonRange * sideScale, right, view);
 
@@ -71,7 +71,7 @@ void CG_OffsetThirdPersonView()
 	if (trace.fraction != 1.f) {
 		fvec3 hitpos = fvec3(cgs->refdef.vieworg) + ((view - fvec3(cgs->refdef.vieworg)) * trace.fraction);
 		VectorCopy(hitpos, view);
-		view[2] += (1.0 - trace.fraction) * 32;
+		view[2] += (1.0f - trace.fraction) * 32.f;
 
 		CG_Trace(&trace, cgs->refdef.vieworg, mins, maxs, view, cgs->predictedPlayerState.clientNum, 2065);
 		hitpos = fvec3(cgs->refdef.vieworg) + ((view - fvec3(cgs->refdef.vieworg)) * trace.fraction);
@@ -104,7 +104,7 @@ void RB_RenderPlayerHitboxes()
 	o.y -= 14.f;
 
 
-	auto v = CM_CreateCube(o, fvec3(28,28, stance.find(int(cgs->predictedPlayerState.viewHeightCurrent))->second));
+	auto v = CM_CreateCube(o, fvec3(28.f,28.f, CG_GetPlayerHitboxHeight(&cgs->predictedPlayerState)));
 
 	RB_DrawCollisionEdges(v.size(), (float(*)[3])v.data(), vec4_t{1,1,0,0.7f}, true);
 

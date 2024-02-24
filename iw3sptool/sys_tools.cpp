@@ -24,7 +24,7 @@ bool MouseHovered(const ivec2& mins, const ivec2& maxs)
 }
 bool ValidNumber(const std::string_view& expr)
 {
-    size_t dot_count{ 0 }, dot_idx, index{ 0 }, sub_count{ 0 }, sub_idx;
+    size_t dot_count{ 0 }, dot_idx, index{ 0 };
 
     if (expr.size() == 1) {
         if (!std::isalnum(expr[0]) && expr[0] != '_')
@@ -104,8 +104,8 @@ Pixel generateRainbowColor()
     static auto start = std::chrono::high_resolution_clock::now();
     auto now = std::chrono::high_resolution_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
-    float hue = fmod(elapsed / 5000.0, 1.0);  
-    return HSVtoRGB(hue, 1.0, 1.0);
+    float hue = fmod(elapsed / 5000.0f, 1.0f);  
+    return HSVtoRGB(hue, 1.0f, 1.0f);
 }
 
 float random(const float range) { //0 -> HI
@@ -116,7 +116,7 @@ float random(const float range) { //0 -> HI
 
 }
 float random(const float min, const float range) { //LO -> HI
-    std::random_device rd;
+    //std::random_device rd;
     static std::mt19937 mt;
     std::uniform_real_distribution num{ min, range };
     return num(mt);

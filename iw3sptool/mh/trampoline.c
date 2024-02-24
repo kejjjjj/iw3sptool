@@ -26,6 +26,9 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma warning( disable : 4244 )
+
+
 #include <windows.h>
 
 #ifndef ARRAYSIZE

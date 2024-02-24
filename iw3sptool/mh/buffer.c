@@ -26,6 +26,10 @@
  *  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma warning( disable : 4244 )
+#pragma warning( disable : 4100 )
+#pragma warning( disable : 4201 )
+
 #include <windows.h>
 #include "buffer.h"
 

@@ -2,6 +2,11 @@
 
 #include "pch.hpp"
 
+template <class T>
+struct vec3;
+
+using ivec3 = vec3<int>;
+using fvec3 = vec3<float>;
 
 template <class T>
 struct vec2
@@ -12,6 +17,7 @@ struct vec2
 	constexpr vec2(const T& v) { x = v; y = v; }
 	constexpr vec2(const T& a, const T& b) { x = a; y = b; }
 	constexpr vec2(const T* a) { x = a[0]; y = a[1]; }
+	constexpr vec2(const vec3<T>& a) { x = a.x; y = a.y; }
 
 	//constexpr vec2(const float(*a)[2]) { x = a[0]; y = a[1];  }
 
@@ -36,6 +42,10 @@ struct vec2
 	vec2 operator/=(const vec2& v) { return { x /= v.x, y /= v.y }; }
 	bool operator==(const vec2& v) const { return  x == v.x && y == v.y; }
 	bool operator!=(const vec2& v) const { return  x != v.x || y != v.y; }
+	bool operator>(const vec2& v) const { return  x > v.x && y > v.y; }
+	bool operator<(const vec2& v) const { return  x < v.x && y < v.y; }
+	bool operator>=(const vec2& v) const { return  x >= v.x && y >= v.y; }
+	bool operator<=(const vec2& v) const { return  x <= v.x && y <= v.y; }
 
 	vec2 operator+=(const T& v) { return { x += v, y += v }; }
 	vec2 operator-=(const T& v) { return { x -= v, y -= v }; }
@@ -47,7 +57,9 @@ struct vec2
 	operator ImVec2() const { return ImVec2((float)x, (float)y); };
 
 #endif
-
+	T& operator[](const int index) const {
+		return ((T*)&x)[index];
+	}
 	operator vec2<int>() { return { (int)x, (int)y }; }
 	operator vec2<float>() { return { (float)x, (float)y }; }
 
@@ -110,7 +122,7 @@ struct vec3
 	constexpr vec3(const T& v) { x = v; y = v, z = v; }
 	constexpr vec3(const T& a, const T& b, const T& c) { x = a; y = b, z = c; }
 	constexpr vec3(const T(*a)[3]) { x = a[0]; y = a[1], z = a[2]; }
-	constexpr vec3(const T *a ) { x = a[0]; y = a[1], z = a[2]; }
+	constexpr vec3(const T* a) { x = a[0]; y = a[1], z = a[2]; }
 
 	//constexpr explicit vec3(const vec3<int>& v) { x = (int)v.x, y = (int)v.y; }
 
@@ -119,7 +131,7 @@ struct vec3
 	vec3 operator*(const vec3& v) const { return { x * v.x, y * v.y, z * v.z }; }
 	vec3 operator/(const vec3& v) const { return { x / v.x, y / v.y, z / v.z }; }
 	void operator=(const vec3& v) { x = v.x; y = v.y, z = v.z; }
-	void operator=(const T *v) { x = v[0]; y = v[1], z = v[2]; }
+	void operator=(const T* v) { x = v[0]; y = v[1], z = v[2]; }
 	std::basic_ostream<char, std::char_traits<char>> operator<< (const vec3& v) {};
 
 	vec3 operator+(const T& v) const { return { x + v, y + v, z + v }; }
@@ -133,20 +145,25 @@ struct vec3
 	vec3 operator/=(const vec3& v) { return { x /= v.x, y /= v.y, z /= v.z }; }
 	bool operator==(const vec3& v) const { return  x == v.x && y == v.y && z == v.z; }
 	bool operator!=(const vec3& v) const { return  x != v.x || y != v.y || z != v.z; }
+	bool operator>(const vec3& v) const { return  x > v.x && y > v.y && z > v.z; }
+	bool operator<(const vec3& v) const { return  x < v.x && y < v.y && z < v.z; }
+	bool operator>=(const vec3& v) const { return  x >= v.x && y >= v.y && z >= v.z; }
+	bool operator<=(const vec3& v) const { return  x <= v.x && y <= v.y && z <= v.z; }
 
 	vec3 operator+=(const T& v) { return { x += v, y += v, z += v }; }
 	vec3 operator-=(const T& v) { return { x -= v, y -= v, z -= v }; }
 	vec3 operator*=(const T& v) { return { x *= v, y *= v, z *= v }; }
 	vec3 operator/=(const T& v) { return { x /= v, y /= v, z /= v }; }
 
+
 #ifdef IMGUI_API
 
 #endif
 	operator vec3<int>() { return { (int)x, (int)y, (int)z }; }
 	operator vec3<float>() { return { (float)x, (float)y, (float)z }; }
-
-	operator float* () const { return (float*)&x; }
-	operator int* () const { return (int*)&x; }
+	operator vec2<int>() { return { (int)x, (int)y }; }
+	operator vec2<float>() { return { (float)x, (float)y }; }
+	operator T* () { return &x; }
 
 	T& operator[](const int index) const {
 		return ((T*)&x)[index];
@@ -156,22 +173,12 @@ struct vec3
 	float mag() const noexcept {
 		return sqrtf(x * x + y * y + z * z);
 	}
+	float mag_sq() const noexcept {
+		return (x * x + y * y + z * z);
+	}
 	float dot(const vec3& vec) const noexcept
 	{
 		return x * vec.x + y * vec.y + z * vec.z;
-	}
-	float normalize() noexcept {
-		const float length = this->mag();
-		float ilength;
-
-		if (length) {
-			ilength = 1 / length;
-			this->x *= ilength;
-			this->y *= ilength;
-			this->z *= ilength;
-		}
-
-		return length;
 	}
 	vec3 normalize() const  noexcept {
 		vec3 r = *this;
@@ -192,15 +199,17 @@ struct vec3
 		const vec3 sub = *this - vec;
 		return sub.mag();
 	}
+	float dist_sq(const vec3& vec) const noexcept
+	{
+		const vec3 sub = *this - vec;
+		return sub.mag_sq();
+	}
 	vec3 inverse() const noexcept
 	{
 		return { -x, -y, -z };
 	}
 	vec3 abs() const noexcept {
 		return { std::abs(x), std::abs(y), std::abs(z) };
-	}
-	float MagSq() const noexcept { //magnitude squared
-		return (x * x + y * y + z * z);
 	}
 	void clamp(const T min, const T max) noexcept {
 		if (x < min)		x = min;
@@ -262,8 +271,8 @@ struct vec3
 		sp = sin(angle);
 		cp = cos(angle);
 
-		return vec3( cp * cy, cp * sy,-sp);
-		
+		return vec3(cp * cy, cp * sy, -sp);
+
 	}
 	vec3 toright() const noexcept {
 		float angle;
@@ -305,12 +314,39 @@ struct vec3
 		return vec3((cr * sp * cy + -sr * -sy), (cr * sp * sy + -sr * cy), cr * cp);
 
 	}
+	vec3 to_degrees()
+	{
+		constexpr float pi = 3.14159265358979323846f;
+		return { x * (180.f / pi), y * (180.f / pi), z * (180.f / pi) };
+	}
+	vec3 normalize360() const noexcept
+	{
+		return vec3
+		{
+			(360.0f / 65536) * ((int)(x * (65536 / 360.0f)) & 65535),
+			(360.0f / 65536) * ((int)(y * (65536 / 360.0f)) & 65535),
+			(360.0f / 65536) * ((int)(z * (65536 / 360.0f)) & 65535),
 
+		};
+	}
+	vec3 normalize180() const noexcept
+	{
+		vec3 angle = normalize360();
+		for (int i = 0; i < 3; i++) {
+			if (angle[i] > 180.0f) {
+				angle[i] -= 360.0f;
+			}
+		}
+		return angle;
+	}
+	vec3 angle_delta(const vec3& other) const noexcept
+	{
+		return (*this - other).normalize180();
+	}
 
 };
 
-using ivec3 = vec3<int>;
-using fvec3 = vec3<float>;
+
 inline std::ostream& operator<<(std::ostream& os, fvec3 const& v) {
 	return os << "{ " << v.x << ", " << v.y << ", " << v.z << " }";
 }
@@ -344,7 +380,7 @@ struct Pixel
 	}
 
 #ifdef IMGUI_API
-	operator ImColor() { return ImColor(r,g,b,a); };
+	operator ImColor() { return ImColor(r, g, b, a); };
 	operator unsigned int() { return IM_COL32(r, g, b, a); };
 
 #endif
