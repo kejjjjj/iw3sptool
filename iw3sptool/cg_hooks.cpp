@@ -40,6 +40,8 @@ void CG_CreateHooks()
 
 	hooktable.insert(hookEnums_e::HOOK_PARSE_ENTITYFIELD, hook::hookobj<void*>(0x4E93C0, G_ParseEntityFieldsASM, TRUE));
 
+	hooktable.insert(hookEnums_e::HOOK_UPDATEVIEWANIM, hook::hookobj<void*>(0x433BB0, CG_UpdateViewWeaponAnim, TRUE));
+
 
 	//hooktable.insert(hookEnums_e::G_TRIGGER, hook::hookobj<void*>(0x4EBDA0, G_Trigger, TRUE));
 

@@ -144,6 +144,12 @@
     <ClInclude Include="cm_model.hpp">
       <Filter>Source Files\cm</Filter>
     </ClInclude>
+    <ClInclude Include="cm_export.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="fs_utilities.hpp">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -226,6 +232,12 @@
     </ClCompile>
     <ClCompile Include="cm_model.cpp">
       <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm_export.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="fs_utilities.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

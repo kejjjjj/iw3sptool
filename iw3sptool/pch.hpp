@@ -150,8 +150,9 @@ typedef vec_t vec4_t[4];
 #include "cg_local.hpp"
 #include "cg_offsets.hpp"
 
+#include "sys_tools.hpp"
 #include "dvar.hpp"
-
+#include "fs_utilities.hpp"
 
 #include "cg_init.hpp"
 #include "cg_hooks.hpp"
@@ -170,7 +171,6 @@ typedef vec_t vec4_t[4];
 #include "com_channel.hpp"
 #include "com_vector.hpp"
 
-#include "sys_tools.hpp"
 
 
 #include "cm_typedefs.hpp"
@@ -178,6 +178,7 @@ typedef vec_t vec4_t[4];
 #include "cm_terrain.hpp"
 #include "cm_entity.hpp"
 #include "cm_model.hpp"
+#include "cm_export.hpp"
 
 
 

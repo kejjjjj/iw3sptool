@@ -9,6 +9,7 @@
 - entity drawing
 - thirdperson
 - player movement modification
+- demo playback
 
 ## Notes
 - Only for cod4 singleplayer patch 1.5
@@ -21,7 +22,8 @@
     - cg_thirdPerson
 - cm_showCollisionFilter expects the name of a material (e.g. "clip") and using it without an argument will clear the render queue
 - cm_showEntities expects the name of a classname (e.g. "trigger_multiple") and using it without an argument will clear the render queue
-- using the "all" argument on cm_showCollisionFilter and cm_showEntities will select *ALL* relevant items 
+- you can include multiple arguments on cm_showCollisionFilter and cm_showEntities by using a space-separated list, (e.g. "clip caulk mantle")
+- using the "all" argument on cm_showCollisionFilter and cm_showEntities will select *ALL* relevant items
 - brushes are highlighted with green
 - terrain brushmodels are highlighted with purple
 - terrain is highlighted with blue

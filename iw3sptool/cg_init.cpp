@@ -28,8 +28,15 @@ void CG_Init()
 
     hook::write_addr(0x628948, "\xEB\x00\xBA\x20\x38", 5); //jnz -> jmp
 
+    hook::nop(0x43DCA9);
+    hook::nop(0x43DCCB);
+    hook::nop(0x43DCD9);
+    
+    //hook::write_addr(0x433BB0, "\xC3", 1);
+
     Cmd_AddCommand("cm_showCollisionFilter", Cmd_CollisionFilter_f);
     Cmd_AddCommand("cm_showEntities", Cmd_ShowEntities_f);
+    Cmd_AddCommand("cm_mapexport", CM_MapExport);
 
     CG_CreatePermaHooks();
 

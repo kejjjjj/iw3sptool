@@ -148,6 +148,8 @@ struct cm_renderinfo
 
 };
 
+class brushModelEntity;
+
 struct cm_geometry
 {
 	virtual ~cm_geometry() = default;
@@ -158,6 +160,8 @@ struct cm_geometry
 	fvec3 origin;
 	bool has_collisions = {};
 	int num_verts = {};
+	brushModelEntity* brushmodel = 0;
+
 };
 
 
@@ -176,13 +180,14 @@ struct cm_brush : public cm_geometry
 	std::vector<const cm_winding*> corners;
 
 	cbrush_t* brush = {};
+	void* scr_brushmodel = 0;
+
 
 	void create_corners();
-
 	void render(const cm_renderinfo& info) override;
 	cm_geomtype type() const noexcept override { return cm_geomtype::brush; }
 	void render2d() override {}
-
+	void link_brushmodel();
 protected:
 	int map_export(std::ofstream& o, int index) override;
 };

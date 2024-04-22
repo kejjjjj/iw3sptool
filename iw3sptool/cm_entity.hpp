@@ -170,7 +170,6 @@ public:
 	}
 	bool valid_entity() const noexcept override { return g != nullptr && brushmodels.empty() == false; }
 
-private:
 
 	enum class brushmodel_type
 	{
@@ -282,6 +281,8 @@ private:
 
 		}
 	};
+
+	private:
 	std::vector<std::unique_ptr<brushmodelbase>> brushmodels;
 
 };

@@ -26,6 +26,7 @@ void OnDvarsModified()
 	static dvar_s* cm_disableTriggers = Dvar_FindMalleableVar("cm_disableTriggers");
 	static dvar_s* cm_onlyBounces = Dvar_FindMalleableVar("cm_onlyBounces");
 	static dvar_s* cm_onlyElevators = Dvar_FindMalleableVar("cm_onlyElevators");
+	static dvar_s* cg_drawGun = Dvar_FindMalleableVar("cg_drawGun");
 
 	if (cm_disableTriggers->modified) {
 
@@ -74,5 +75,23 @@ void OnDvarsModified()
 		__brush::rb_requesting_to_stop_rendering = false;
 
 	}
+	
+	static bool drawgun_was_enabled_before_demo_playback = false;
+
+	if (*(bool*)0x85BC80) {
+
+		if (cg_drawGun->current.enabled)
+			drawgun_was_enabled_before_demo_playback = true;
+
+		cg_drawGun->current.enabled = false;
+		cg_drawGun->latched.enabled = false;
+		cg_drawGun->modified = false;
+	}
+	else if (drawgun_was_enabled_before_demo_playback) {
+		cg_drawGun->current.enabled = true;
+		cg_drawGun->modified = true;
+		drawgun_was_enabled_before_demo_playback = false;
+	}
+
 
 }

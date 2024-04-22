@@ -109,3 +109,13 @@ void RB_RenderPlayerHitboxes()
 	RB_DrawCollisionEdges(v.size(), (float(*)[3])v.data(), vec4_t{1,1,0,0.7f}, true);
 
 }
+
+void CG_UpdateViewWeaponAnim()
+{
+
+	if (*(bool*)0x85BC80)
+		return;
+
+	decltype(auto) detour_func = find_hook(hookEnums_e::HOOK_UPDATEVIEWANIM);
+	return detour_func.cast_call<void(*)()>();
+}

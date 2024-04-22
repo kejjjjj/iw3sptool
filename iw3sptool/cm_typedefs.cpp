@@ -1,5 +1,31 @@
 #include "pch.hpp"
 
+void cm_brush::link_brushmodel()
+{
+	using bm_base_t = brushModelEntity::brushmodelbase;
+
+	for (auto& ent : gameEntities::getInstance()) {
+
+		if (!ent->is_brush_model())
+			continue;
+
+		auto bm = dynamic_cast<bm_base_t*>(ent.get());
+
+		if (bm->get_type() != brushModelEntity::brushmodel_type::BRUSH)
+			continue;
+
+		auto bm_brush = dynamic_cast<brushModelEntity::brushmodel*>(bm);
+
+		if (bm_brush->linked_brush != brush)
+			continue;
+
+		brushmodel = dynamic_cast<brushModelEntity*>(ent.get());
+		scr_brushmodel = bm_brush;
+
+	}
+
+}
+
 void cm_brush::render(const cm_renderinfo& info)
 {
 	if (info.only_colliding && brush->has_collision() == false)
@@ -131,10 +157,19 @@ void cm_brush::create_corners()
 }
 int cm_brush::map_export(std::ofstream& o, int index)
 {
+	link_brushmodel();
+
+	std::vector<cm_triangle> new_points = triangles;
+
+	if (scr_brushmodel) {
+
+		new_points = reinterpret_cast<brushModelEntity::brushmodel*>(scr_brushmodel)->brush_geometry.triangles;
+	}
+
 	o << "// brush " << index << '\n';
 	o << "{\n";
 
-	for (auto& tri : triangles)
+	for (auto& tri : new_points)
 	{
 
 		o << std::format(" ( {} {} {} )", tri.a.x, tri.a.y, tri.a.z);
@@ -339,6 +374,8 @@ bool CM_IsMatchingFilter(const std::unordered_set<std::string>& filters, const c
 
 void CM_LoadMap()
 {
+
+	CClipMap::clear();
 
 	for (unsigned short i = 0; i < cm->numBrushes; i++)
 		CM_GetBrushWindings(&cm->brushes[i]);
