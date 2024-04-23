@@ -89,9 +89,11 @@ void RB_ShowCollision(GfxViewParms* viewParms);
 bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int numPlanes);
 bool CM_BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frustumPlanes, int numPlanes);
 std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& size);
+std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& mins, const fvec3& maxs);
+
 std::vector<fvec3> CM_CreateSphere(const fvec3& ref_org, const float radius, const int32_t latitudeSegments, const int32_t longitudeSegments, const fvec3& scale);
 std::vector<std::string> CM_GetBrushMaterials(const cbrush_t* brush);
-
+float RadiusFromBounds(const float* mins, const float* maxs);
 namespace __brush
 {
 	inline bool rb_requesting_to_stop_rendering = false; //a silly way to handle multithreaded rendering contexts

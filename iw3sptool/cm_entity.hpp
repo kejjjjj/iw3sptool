@@ -6,6 +6,7 @@ enum class gentity_type
 {
 	BRUSHMODEL,
 	SPAWNER,
+	RADIUS,
 	OTHER
 };
 
@@ -49,6 +50,13 @@ public:
 		origin = (fvec3*)g->r.currentOrigin;
 		orientation = (fvec3*)g->r.currentAngles;
 
+		auto _fields = entity_globals::ent_fields.find(g->s.number);
+
+
+		if (_fields != entity_globals::ent_fields.end()) {
+			fields = &_fields->second;
+		}
+
 	};
 	virtual ~gameEntity() = default;
 	virtual bool valid_entity() const noexcept { return g != nullptr; }
@@ -69,6 +77,7 @@ protected:
 	fvec3* orientation = 0;
 	fvec3 oldOrigin;
 	fvec3 oldOrientation;
+	entity_fields* fields = 0;
 
 };
 class brushModelEntity : public gameEntity
@@ -145,11 +154,9 @@ public:
 			if (dist > draw_dist)
 				continue;
 
-			auto fields = entity_globals::ent_fields.find(g->s.number);
-
-			if (fields != entity_globals::ent_fields.end()) {
+			if (fields) {
 				std::string buff;
-				for (auto& field : fields->second.key_value)
+				for (auto& field : fields->key_value)
 				{
 					buff += std::string(field.first) + " - " + field.second + "\n";
 				}
@@ -342,11 +349,9 @@ public:
 		if (dist > draw_dist)
 			return;
 
-		auto fields = entity_globals::ent_fields.find(g->s.number);
-
-		if (fields != entity_globals::ent_fields.end()) {
+		if (fields) {
 			std::string buff;
-			for (auto& field : fields->second.key_value)
+			for (auto& field : fields->key_value)
 			{
 				buff += std::string(field.first) + " - " + field.second + "\n";
 			}
@@ -364,6 +369,116 @@ private:
 	std::vector<fvec3> geometry;
 };
 
+class radiusEntity : public gameEntity
+{
+public:
+	radiusEntity(gentity_s* gent) : gameEntity(gent) {
+
+		refresh_geometry();
+
+	}
+	~radiusEntity() = default;
+
+	gentity_type get_type() const override
+	{
+		return gentity_type::RADIUS;
+	}
+
+	void refresh_geometry() {
+
+		float radius = RadiusFromBounds(g->r.mins, g->r.maxs);
+		if (fields) {
+			for (auto& field : fields->key_value) {
+				if(field.first == "targetname" && field.second.contains("radiation"))
+					radius *= Dvar_FindMalleableVar("cm_radiation_radius_scale")->current.value;
+
+			}
+
+		}
+
+		xy_cylinder_bottom.clear();
+		xy_cylinder_side.clear();
+		xy_cylinder_top.clear();
+
+		constexpr int NUM_VERTS = 24;
+		float angleIncrement = 2.f * M_PI / NUM_VERTS;
+		for (int i = 0; i < NUM_VERTS; ++i) {
+			auto angle = i * angleIncrement;
+			auto x = origin->x + radius * cosf(angle);
+			auto y = origin->y + radius * sinf(angle);
+
+			xy_cylinder_top.push_back({ x, y, g->r.currentOrigin[2] + g->r.maxs[2] });
+			xy_cylinder_bottom.push_back({ x, y, g->r.currentOrigin[2] - g->r.mins[2] });
+		}
+
+		for (int i = 0; i < NUM_VERTS; ++i) {
+			auto angle1 = i * angleIncrement;
+			auto angle2 = (i + 1) * angleIncrement;
+			auto x1 = origin->x + radius * cosf(angle1);
+			auto y1 = origin->y + radius * sinf(angle1);
+			auto x2 = origin->x + radius * cosf(angle2);
+			auto y2 = origin->y + radius * sinf(angle2);
+
+			// Quad vertices
+			xy_cylinder_side.push_back({ x1, y1, g->r.currentOrigin[2] + g->r.maxs[2] }); // Vertex on top circle
+			xy_cylinder_side.push_back({ x1, y1, g->r.currentOrigin[2] - g->r.mins[2] }); // Vertex on bottom circle
+			xy_cylinder_side.push_back({ x2, y2, g->r.currentOrigin[2] - g->r.mins[2] }); // Next vertex on bottom circle
+			xy_cylinder_side.push_back({ x2, y2, g->r.currentOrigin[2] + g->r.maxs[2] }); // Next vertex on top circle
+		}
+	}
+
+	void render(const cm_renderinfo& info) override {
+
+		if (origin->dist(predictedPlayerState->origin) > info.draw_dist)
+			return;
+
+		auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
+
+		func(xy_cylinder_top.size(), (float(*)[3])xy_cylinder_top.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+		func(xy_cylinder_bottom.size(), (float(*)[3])xy_cylinder_bottom.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+		func(xy_cylinder_side.size(), (float(*)[3])xy_cylinder_side.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+
+	}
+
+	void render2d([[maybe_unused]]float draw_dist) override {
+
+		fvec3 org = g->r.currentOrigin;
+		fvec3 maxs = g->r.maxs;
+
+		org.z += (g->r.maxs[2] - g->r.mins[2]) / 2;
+
+		auto center = org;
+		float dist = center.dist(predictedPlayerState->origin);
+
+		if (dist > draw_dist)
+			return;
+
+
+		if (fields) {
+			std::string buff;
+			for (auto& field : fields->key_value)
+			{
+				buff += std::string(field.first) + " - " + field.second + "\n";
+			}
+
+			if (auto op = WorldToScreen(center)) {
+				auto p = (fvec2)op.value();
+				float scale = R_ScaleByDistance(dist) * 0.2f;
+				R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
+
+			}
+
+		}
+
+	}
+
+protected:
+
+	std::vector<fvec3> xy_cylinder_top;
+	std::vector<fvec3> xy_cylinder_bottom;
+	std::vector<fvec3> xy_cylinder_side;
+};
+
 class gameEntities
 {
 public:
@@ -377,9 +492,9 @@ public:
 
 		auto&& ent = std::move(gameEntity::createEntity(gent));
 
-		if (!ent)
+		if (!ent) {
 			return;
-
+		}
 		entities.push_back(std::move(ent));
 	}
 	bool empty() const noexcept { return entities.empty(); }
@@ -439,6 +554,9 @@ inline std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
 	}
 	else if (G_EntityIsSpawner(Scr_GetString(gent->classname))) {
 		return std::move(std::make_unique<spawnerEntity>(gent));
+	}
+	else if (Scr_GetString(gent->classname) == std::string("trigger_radius")) {
+		return std::move(std::make_unique<radiusEntity>(gent));
 	}
 
 	return nullptr;

@@ -83,7 +83,6 @@ void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string
 	ents.clear();
 	for (int i = 0; i < l->num_entities; i++) {
 
-
 		if (CM_IsMatchingFilter(filters, Scr_GetString(l->gentities[i].classname)) == false)
 			continue;
 

@@ -338,9 +338,24 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 			geom->render(render_info);
 	}
 
-	for (auto& ent : ents)
-		ent->render(render_info);
+	auto cm_radiation_radius_scale = Dvar_FindMalleableVar("cm_radiation_radius_scale");
+	
+	if (cm_radiation_radius_scale->modified) {
 
+		for (auto& ent : ents) {
+			if (ent->get_type() == gentity_type::RADIUS) {
+				dynamic_cast<radiusEntity*>(ent.get())->refresh_geometry();
+			}
+		}
+
+		cm_radiation_radius_scale->modified = false;
+	}
+
+	for (auto& ent : ents) {
+
+
+		ent->render(render_info);
+	}
 
 }
 bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int numPlanes)
@@ -428,6 +443,32 @@ std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& size)
 
 	vertices.push_back(v3);
 	vertices.push_back(v7);
+
+	return vertices;
+}
+std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& mins, const fvec3& maxs)
+{
+	std::vector<fvec3> vertices;
+
+	// Define the 8 vertices of the cube
+	fvec3 v1 = { origin.x + mins.x, origin.y + mins.y, origin.z + mins.z }; // Min corner
+	fvec3 v2 = { origin.x + maxs.x, origin.y + mins.y, origin.z + mins.z };
+	fvec3 v3 = { origin.x + maxs.x, origin.y + maxs.y, origin.z + mins.z };
+	fvec3 v4 = { origin.x + mins.x, origin.y + maxs.y, origin.z + mins.z };
+	fvec3 v5 = { origin.x + mins.x, origin.y + mins.y, origin.z + maxs.z }; // Max corner
+	fvec3 v6 = { origin.x + maxs.x, origin.y + mins.y, origin.z + maxs.z };
+	fvec3 v7 = { origin.x + maxs.x, origin.y + maxs.y, origin.z + maxs.z };
+	fvec3 v8 = { origin.x + mins.x, origin.y + maxs.y, origin.z + maxs.z };
+
+	// Push the vertices into the vector
+	vertices.push_back(v1);
+	vertices.push_back(v2);
+	vertices.push_back(v3);
+	vertices.push_back(v4);
+	vertices.push_back(v5);
+	vertices.push_back(v6);
+	vertices.push_back(v7);
+	vertices.push_back(v8);
 
 	return vertices;
 }
@@ -537,4 +578,27 @@ std::vector<std::string> CM_GetBrushMaterials(const cbrush_t* brush)
 	}
 
 	return result;
+}
+float RadiusFromBounds(const float* mins, const float* maxs)
+{
+
+	float v2 = fabsf(*mins);
+	float v3 = fabsf(*maxs);
+	if (v2 <= v3)
+		v2 = v3;
+
+	float v4 = v2;
+	float v5 = fabsf(mins[1]);
+	float v6 = fabsf(maxs[1]);
+	if (v5 <= v6)
+		v5 = v6;
+
+	float v7 = v5;
+	float v8 = fabsf(mins[2]);
+	float v9 = fabsf(maxs[2]);
+	if (v8 <= v9)
+		v8 = v9;
+
+	float v10 = sqrtf(((v8 * v8) + ((v4 * v4) + (v7 * v7))));
+	return v10;
 }

@@ -74,6 +74,13 @@ void CG_Init()
     l.value.min = 0.f;
     Dvar_RegisterNew("cm_showCollisionPolyAlpha", dvar_type::value, dvar_flags::saved, "Collision transparency", v, l);
 
+    v.value = 0.5f;
+    l.value.max = 1.f;
+    l.value.min = 0.f;
+    Dvar_RegisterNew("cm_radiation_radius_scale", dvar_type::value, dvar_flags::saved, 
+        "the scale of the actual radiation zone within the radius of the trigger (restart the level if this doesn't do anything)\n"
+        "see maps\\_radiation::updateRadiationDosage()" , v, l);
+
     v.enabled = true;
 
     static std::string date = std::string(__DATE__) + " - " + std::string(__TIME__);
