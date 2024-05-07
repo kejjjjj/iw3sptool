@@ -1,6 +1,7 @@
 #pragma once
 
-#include "pch.hpp"
+#include <cmath>
+#include <ostream>
 
 template <class T>
 struct vec3;
@@ -169,7 +170,6 @@ struct vec3
 		return ((T*)&x)[index];
 	}
 
-	void assign_to(vec3_t out) const noexcept { out[0] = x; out[1] = y; out[2] = z; }
 	float mag() const noexcept {
 		return sqrtf(x * x + y * y + z * z);
 	}
@@ -368,14 +368,14 @@ struct Quaternion {
 
 struct Pixel
 {
-	uint8_t r, g, b, a;
+	uint8_t r = {}, g = {}, b = {}, a = {};
 
 	constexpr Pixel() { r = 0, g = 0, b = 0, a = 255; }
 	constexpr Pixel(const uint8_t val) { r = val, g = val, b = val, a = val; };
 	constexpr Pixel(const uint8_t _r, const uint8_t _g, const uint8_t _b, const uint8_t _a) { r = _r, g = _g, b = _b, a = _a; }
 	constexpr Pixel(const Pixel& p) { r = p.r, g = p.g, b = p.b, a = p.a; }
 
-	Pixel operator=(const Pixel& px) {
+	constexpr Pixel operator=(const Pixel& px) {
 		return { px.r, px.g, px.b, px.a };
 	}
 

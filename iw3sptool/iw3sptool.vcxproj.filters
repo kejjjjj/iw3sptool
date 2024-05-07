@@ -22,9 +22,6 @@
     <Filter Include="Source Files\cl">
       <UniqueIdentifier>{64584f88-59cb-43a0-b576-58898cd8d847}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\engine">
-      <UniqueIdentifier>{052ecdfd-7c39-4486-8883-7aac4ae6593b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\r">
       <UniqueIdentifier>{285a8760-98e9-4416-b87f-eed938c822f0}</UniqueIdentifier>
     </Filter>
@@ -37,7 +34,19 @@
     <Filter Include="Source Files\g">
       <UniqueIdentifier>{36363a5e-f623-49dd-9fa5-98659aec35d4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\pm">
+    <Filter Include="Source Files\utils">
+      <UniqueIdentifier>{8b8fd15a-3514-4a8a-8264-a02d3cf6a4ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cmd">
+      <UniqueIdentifier>{72fc1a57-570e-4ebd-9257-4508df6e9aa5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scr">
+      <UniqueIdentifier>{11206b69-97d5-4fc0-bc85-a7bb0fb51bf8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dvar">
+      <UniqueIdentifier>{e048798f-f91a-4943-bdcb-e69b40d58531}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\bg">
       <UniqueIdentifier>{f5759a1f-7c12-40b5-b274-58398f53163f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -72,83 +81,104 @@
     <ClInclude Include="mh\trampoline.h">
       <Filter>Header Files\mh</Filter>
     </ClInclude>
-    <ClInclude Include="koukku.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="typedefs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pch.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cg_init.hpp">
-      <Filter>Source Files\cg</Filter>
-    </ClInclude>
-    <ClInclude Include="cg_local.hpp">
-      <Filter>Source Files\cg</Filter>
-    </ClInclude>
-    <ClInclude Include="cg_hooks.hpp">
-      <Filter>Source Files\cg</Filter>
-    </ClInclude>
-    <ClInclude Include="cg_offsets.hpp">
-      <Filter>Source Files\cg</Filter>
-    </ClInclude>
     <ClInclude Include="errors.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="cl_main.hpp">
-      <Filter>Source Files\cl</Filter>
-    </ClInclude>
-    <ClInclude Include="dvar.hpp">
-      <Filter>Source Files\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="r_active.hpp">
-      <Filter>Source Files\r</Filter>
-    </ClInclude>
-    <ClInclude Include="r_drawtools.hpp">
-      <Filter>Source Files\r</Filter>
-    </ClInclude>
-    <ClInclude Include="rb_endscene.hpp">
-      <Filter>Source Files\r</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_brush.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
-    <ClInclude Include="com_vector.hpp">
-      <Filter>Source Files\com</Filter>
-    </ClInclude>
-    <ClInclude Include="com_channel.hpp">
-      <Filter>Source Files\com</Filter>
-    </ClInclude>
-    <ClInclude Include="e_utilities.hpp">
-      <Filter>Source Files\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="sys_tools.hpp">
-      <Filter>Source Files\engine</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_terrain.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
-    <ClInclude Include="cg_view.hpp">
-      <Filter>Source Files\cg</Filter>
-    </ClInclude>
-    <ClInclude Include="bg_pmove.hpp">
-      <Filter>Source Files\pm</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_typedefs.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_entity.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_model.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
-    <ClInclude Include="cm_export.hpp">
-      <Filter>Source Files\cm</Filter>
-    </ClInclude>
     <ClInclude Include="fs_utilities.hpp">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_offsets.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_view.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_hooks.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_init.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_local.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\hook.hpp">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="cl\cl_main.hpp">
+      <Filter>Source Files\cl</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\functions.hpp">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\engine.hpp">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\errors.hpp">
+      <Filter>Source Files\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="global_macros.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cmd.hpp">
+      <Filter>Source Files\cmd</Filter>
+    </ClInclude>
+    <ClInclude Include="scr\scr.hpp">
+      <Filter>Source Files\scr</Filter>
+    </ClInclude>
+    <ClInclude Include="dvar\dvar.hpp">
+      <Filter>Source Files\dvar</Filter>
+    </ClInclude>
+    <ClInclude Include="com\com_channel.hpp">
+      <Filter>Source Files\com</Filter>
+    </ClInclude>
+    <ClInclude Include="com\com_vector.hpp">
+      <Filter>Source Files\com</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_export.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_model.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_terrain.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_typedefs.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_brush.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_entity.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
+    <ClInclude Include="g\g_entity.hpp">
+      <Filter>Source Files\g</Filter>
+    </ClInclude>
+    <ClInclude Include="r\r_drawtools.hpp">
+      <Filter>Source Files\r</Filter>
+    </ClInclude>
+    <ClInclude Include="r\rb_endscene.hpp">
+      <Filter>Source Files\r</Filter>
+    </ClInclude>
+    <ClInclude Include="r\r_active.hpp">
+      <Filter>Source Files\r</Filter>
+    </ClInclude>
+    <ClInclude Include="bg\bg_pmove.hpp">
+      <Filter>Source Files\bg</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_trace.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
+    <ClInclude Include="cl\cl_keymove.hpp">
+      <Filter>Source Files\cl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -173,71 +203,80 @@
     <ClCompile Include="mh\trampoline.c">
       <Filter>Header Files\mh</Filter>
     </ClCompile>
-    <ClCompile Include="koukku.cpp">
-      <Filter>Header Files</Filter>
-    </ClCompile>
-    <ClCompile Include="cg_init.cpp">
-      <Filter>Source Files\cg</Filter>
-    </ClCompile>
-    <ClCompile Include="cg_hooks.cpp">
-      <Filter>Source Files\cg</Filter>
-    </ClCompile>
     <ClCompile Include="errors.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cl_main.cpp">
-      <Filter>Source Files\cl</Filter>
-    </ClCompile>
-    <ClCompile Include="dvar.cpp">
-      <Filter>Source Files\engine</Filter>
-    </ClCompile>
-    <ClCompile Include="r_active.cpp">
-      <Filter>Source Files\r</Filter>
-    </ClCompile>
-    <ClCompile Include="r_drawtools.cpp">
-      <Filter>Source Files\r</Filter>
-    </ClCompile>
-    <ClCompile Include="rb_endscene.cpp">
-      <Filter>Source Files\r</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_brush.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
-    <ClCompile Include="com_vector.cpp">
-      <Filter>Source Files\com</Filter>
-    </ClCompile>
-    <ClCompile Include="com_channel.cpp">
-      <Filter>Source Files\com</Filter>
-    </ClCompile>
-    <ClCompile Include="e_utilities.cpp">
-      <Filter>Source Files\engine</Filter>
-    </ClCompile>
-    <ClCompile Include="sys_tools.cpp">
-      <Filter>Source Files\engine</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_terrain.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
-    <ClCompile Include="cg_view.cpp">
-      <Filter>Source Files\cg</Filter>
-    </ClCompile>
-    <ClCompile Include="bg_pmove.cpp">
-      <Filter>Source Files\pm</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_typedefs.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_entity.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_model.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
-    <ClCompile Include="cm_export.cpp">
-      <Filter>Source Files\cm</Filter>
-    </ClCompile>
     <ClCompile Include="fs_utilities.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cg\cg_view.cpp">
+      <Filter>Source Files\cg</Filter>
+    </ClCompile>
+    <ClCompile Include="cg\cg_hooks.cpp">
+      <Filter>Source Files\cg</Filter>
+    </ClCompile>
+    <ClCompile Include="cg\cg_init.cpp">
+      <Filter>Source Files\cg</Filter>
+    </ClCompile>
+    <ClCompile Include="cl\cl_main.cpp">
+      <Filter>Source Files\cl</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\functions.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\engine.cpp">
+      <Filter>Source Files\utils</Filter>
+    </ClCompile>
+    <ClCompile Include="cmd.cpp">
+      <Filter>Source Files\cmd</Filter>
+    </ClCompile>
+    <ClCompile Include="scr\scr.cpp">
+      <Filter>Source Files\scr</Filter>
+    </ClCompile>
+    <ClCompile Include="dvar\dvar.cpp">
+      <Filter>Source Files\dvar</Filter>
+    </ClCompile>
+    <ClCompile Include="com\com_vector.cpp">
+      <Filter>Source Files\com</Filter>
+    </ClCompile>
+    <ClCompile Include="com\com_channel.cpp">
+      <Filter>Source Files\com</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_export.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_model.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_terrain.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_typedefs.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_brush.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_entity.cpp">
+      <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="g\g_entity.cpp">
+      <Filter>Source Files\g</Filter>
+    </ClCompile>
+    <ClCompile Include="r\r_drawtools.cpp">
+      <Filter>Source Files\r</Filter>
+    </ClCompile>
+    <ClCompile Include="r\rb_endscene.cpp">
+      <Filter>Source Files\r</Filter>
+    </ClCompile>
+    <ClCompile Include="r\r_active.cpp">
+      <Filter>Source Files\r</Filter>
+    </ClCompile>
+    <ClCompile Include="bg\bg_pmove.cpp">
+      <Filter>Source Files\bg</Filter>
+    </ClCompile>
+    <ClCompile Include="cl\cl_keymove.cpp">
+      <Filter>Source Files\cl</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

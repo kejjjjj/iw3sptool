@@ -14,17 +14,27 @@ inline void FatalError(const std::string& format, const Args&&... args)
 {
 	char buffer[512];
 	std::snprintf(buffer, sizeof(buffer), format.c_str(), args...);
-	*(bool*)0x1E209E0 = true;
-	strcpy((char*)0xF8CFD0, buffer);
-	((void(*)())0x533250)();
+	*(bool*)0xD5EC496 = true;
+	strcpy((char*)0x1475ED0, buffer);
+	((void(*)())0x4FD030)();
 
 }
 template<>
 inline void FatalError(const std::string& format)
 {
-	*(bool*)0x1E209E0 = true;
-	strcpy((char*)0xF8CFD0, format.c_str());
-	((void(*)())0x533250)();
+
+
+	*(bool*)0xD5EC496 = true;
+	strcpy((char*)0x1475ED0, format.c_str());
+	((void(*)())0x4FD030)();
 
 }
+//dll_export inline void FE(const char* msg)
+//{
+//	printf("what the sigma\n");
+//
+//	//*(bool*)0xD5EC496 = true;
+//	//strcpy((char*)0x1475ED0, msg);
+//	//((void(*)())0x4FD030)();
+//}
 #pragma warning(pop)

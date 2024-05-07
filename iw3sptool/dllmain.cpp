@@ -1,5 +1,10 @@
 #include "pch.hpp"
+#include <cg/cg_init.hpp>
+#include <thread>
+#include <chrono>
+#include <global_macros.hpp>
 
+using namespace std::chrono_literals;
 
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, [[maybe_unused]]LPVOID lpReserved)
 {
@@ -24,9 +29,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, [[maybe_unused
 
                 //puts("hello, world!");
 
-                while (!dx->device) {
-                    std::this_thread::sleep_for(300ms);
-                }
 
                 CG_Init();
 
@@ -34,7 +36,8 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD  ul_reason_for_call, [[maybe_unused
                     std::this_thread::sleep_for(1s);
                 }
 
-                //fclose(_con);
+                //if(_con)
+                //    fclose(_con);
 
                 return 1;
 
