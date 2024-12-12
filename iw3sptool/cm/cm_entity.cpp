@@ -140,15 +140,13 @@ void brushModelEntity::brushmodel::render(const fvec3& _origin, const cm_renderi
 	if (CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes) == false)
 		return;
 
-	for (auto& w : brush_geometry.windings)
-	{
+	for (auto& w : brush_geometry.windings) {
 		vec4_t c = { 0,1,1,0.3f };
 
 		c[0] = w.color[0];
 		c[1] = w.color[1];
 		c[2] = w.color[2];
 		c[3] = info.alpha;
-
 
 		auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
 		func(w.points.size(), (float(*)[3])w.points.data(), vec4_t{ 1,0,0,0.3f }, info.depth_test);

@@ -10,6 +10,8 @@
 #include <r/rb_endscene.hpp>
 #include "cm_entity.hpp"
 
+#define NUM_SIDES 128
+
 SimplePlaneIntersection pts[1024];
 SimplePlaneIntersection* pts_results[1024];
 
@@ -75,10 +77,10 @@ std::unique_ptr<cm_geometry> CM_GetBrushPoints(cbrush_t* brush, const fvec3& pol
 	if (!brush)
 		return nullptr;
 
-	float outPlanes[40][4]{};
+	float outPlanes[NUM_SIDES][4]{};
 	int planeCount = BrushToPlanes(brush, outPlanes);
 	int intersections = GetPlaneIntersections((const float**)outPlanes, planeCount, pts);
-	adjacencyWinding_t windings[40]{};
+	adjacencyWinding_t windings[NUM_SIDES]{};
 
 	int intersection = 0;
 	int num_verts = 0;
@@ -571,7 +573,7 @@ std::vector<std::string> CM_GetBrushMaterials(const cbrush_t* brush)
 {
 	std::vector<std::string> result;
 
-	float outPlanes[40][4]{};
+	float outPlanes[NUM_SIDES][4]{};
 	int planeCount = BrushToPlanes(brush, outPlanes);
 	[[maybe_unused]] int intersections = GetPlaneIntersections((const float**)outPlanes, planeCount, pts);
 
