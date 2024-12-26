@@ -5,7 +5,8 @@
 ![image](https://github.com/kejjjjj/iw3sptool/assets/108032666/d9c08f5e-47fc-4a8a-90e3-eb74a546b0f0)
 
 ## Features
-- collision drawing 
+- collision drawing
+- map exporting 
 - entity drawing
 - thirdperson
 - player movement modification
