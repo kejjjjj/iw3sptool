@@ -43,8 +43,8 @@ void CG_CreateHooks()
 	hooktable::preserver<void>(HOOK_PREFIX("Fast_Restart_f"), 0x5C4E90, Fast_Restart_f);
 
 	hooktable::preserver<void, pmove_t*>(HOOK_PREFIX("Pmove"), 0x5BD440, Pmove);
-	hooktable::preserver<void>(HOOK_PREFIX("PmoveSingleASM"), 0x5BD303, PmoveSingleASM);
-	
+	hooktable::preserver<void>(HOOK_PREFIX("PmoveSingleASM"), 0x5BD2F9, PmoveSingleASM);
+
 	hooktable::preserver<void>(HOOK_PREFIX("PM_SprintFixASM"), 0x5B7B1E, PM_SprintFixASM);
 
 	hooktable::preserver<void>(HOOK_PREFIX("G_ParseEntityFieldsASM"), 0x4E93C0, G_ParseEntityFieldsASM);

@@ -4,6 +4,7 @@
 
 void Pmove(pmove_t* pm);
 void PmoveSingleASM();
+void PM_FoliageSnd(pmove_t* pm);
 
 void PM_SprintFixASM();
 

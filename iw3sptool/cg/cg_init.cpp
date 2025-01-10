@@ -60,10 +60,12 @@ void CG_Init()
     static const char* poly_types[] = {"Edges", "Polygons"};
     static const char* showCollisionNames[] = { "Disabled", "Brushes", "Terrain", "Both"};
     static const char* elevator_types[] = { "Disabled", "Enabled", "Include Corners" };
+    static const char* entity_info[] = { "Disabled", "Enabled", "Verbose" };
 
 
     l.enumeration.stringCount = 4;
     l.enumeration.strings = showCollisionNames;
+
 
 
     Dvar_RegisterNew("cm_showCollision", dvar_type::enumeration, dvar_flags::saved, 
@@ -111,7 +113,11 @@ void CG_Init()
 
     v.enabled = false;
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);
-    Dvar_RegisterNew("cm_entityInfo", dvar_type::boolean, dvar_flags::saved, "Display brushmodel information", v, l);
+    
+    l.enumeration.stringCount = 3;
+    l.enumeration.strings = entity_info;
+
+    Dvar_RegisterNew("cm_entityInfo", dvar_type::enumeration, dvar_flags::saved, "Display entity information", v, l);
     v.enabled = true;
 
     Dvar_RegisterNew("cm_ignoreNonColliding", dvar_type::boolean, dvar_flags::saved, "Don't display surfaces which don't have collisions", v, l);
@@ -141,6 +147,7 @@ void CG_Init()
     Dvar_RegisterNew("pm_multiplayer", dvar_type::boolean, dvar_flags::none, "fps behaves the same way as it does in multiplayer", v, l);
 
     Dvar_RegisterNew("pm_coordinates", dvar_type::boolean, dvar_flags::saved, "show player coordinates", v, l);
+    Dvar_RegisterNew("pm_velocity", dvar_type::boolean, dvar_flags::saved, "show player velocity", v, l);
 
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 

@@ -14,6 +14,13 @@ enum class gentity_type
 	OTHER
 };
 
+enum class entity_info_type
+{
+	eit_disabled,
+	eit_enabled,
+	eit_verbose
+};
+
 struct entity_fields
 {
 	std::vector<std::pair<std::string, std::string>> key_value;
@@ -59,7 +66,7 @@ public:
 	static bool is_supported_entity(gentity_s* g) { return createEntity(g).get(); }
 	virtual gentity_type get_type() const = 0;
 	virtual void render(const cm_renderinfo& info) = 0;
-	virtual void render2d(float draw_dist);
+	virtual void render2d(float draw_dist, entity_info_type entType);
 
 protected:
 	gentity_s* g = 0;
@@ -76,7 +83,7 @@ public:
 	~brushModelEntity() = default;
 	brushModelEntity(gentity_s* gent);
 	void render(const cm_renderinfo& info) override;
-	void render2d(float draw_dist) override;
+	void render2d(float draw_dist, entity_info_type entType) override;
 
 	constexpr gentity_type get_type() const override
 	{

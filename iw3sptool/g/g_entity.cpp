@@ -8,6 +8,7 @@
 #include <cm/cm_brush.hpp>
 #include <scr/scr.hpp>
 #include <utils/hook.hpp>
+#include <dvar/dvar.hpp>
 
 using namespace std::chrono_literals;
 
@@ -54,10 +55,12 @@ void Cmd_ShowEntities_f()
 	if (num_args == 1) {
 		monitoring_entities = false;
 		if (ents.empty()) {
-			return Com_Printf("there are no entities to be cleared.. did you intend to use cm_showEntities <classname>?\n");
+			return Com_Printf(CON_CHANNEL_CONSOLEONLY, "there are no entities to be cleared.. did you intend to use cm_showEntities <classname>?\n");
 		}
 
-		Com_Printf("clearing %i entities from the render queue\n", ents.size());
+		if (Dvar_FindMalleableVar("developer")->current.enabled)
+			Com_Printf("clearing %i entities from the render queue\n", ents.size());
+
 		ents.clear();
 		return;
 	}
@@ -71,7 +74,7 @@ void Cmd_ShowEntities_f()
 
 	G_DiscoverGentities(level, filters);
 
-	Com_Printf("adding %i entities to the render queue\n", ents.size());
+	Com_Printf(CON_CHANNEL_CONSOLEONLY, "adding %i entities to the render queue\n", ents.size());
 
 }
 
@@ -194,7 +197,9 @@ void G_FreeEntity(gentity_s* gent)
 void G_FreeEntity2()
 {
 	if (this_entity_is_relevant) {
-		Com_Printf("removing an entity from the render queue\n");
+		if (Dvar_FindMalleableVar("developer")->current.enabled)
+			Com_Printf("removing an entity from the render queue\n");
+
 		G_DiscoverGentities(level, ent_filter);
 		this_entity_is_relevant = false;
 	}
@@ -238,7 +243,8 @@ void G_Spawn(gentity_s* gent)
 	if (monitoring_entities && gent) {
 		if (CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname)) && gameEntity::is_supported_entity(gent)) {
 			G_DiscoverGentities(level, ent_filter);
-			Com_Printf("adding a new entity to the render queue\n");
+			if(Dvar_FindMalleableVar("developer")->current.enabled)
+				Com_Printf("adding a new entity to the render queue\n");
 		}
 
 	}

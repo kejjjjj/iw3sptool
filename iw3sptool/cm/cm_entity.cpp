@@ -1,32 +1,49 @@
-#include "cm_entity.hpp"
-#include <cg/cg_offsets.hpp>
+#include "cg/cg_offsets.hpp"
 #include "cm_brush.hpp"
+#include "cm_entity.hpp"
 #include "cm_terrain.hpp"
-#include <dvar/dvar.hpp>
-#include <utils/functions.hpp>
-#include <com/com_vector.hpp>
-#include <r/r_drawtools.hpp>
+#include "com/com_vector.hpp"
+#include "dvar/dvar.hpp"
+#include "r/r_drawtools.hpp"
 #include "r/rb_endscene.hpp"
-#include <scr/scr.hpp>
+#include "scr/scr.hpp"
+#include "utils/functions.hpp"
 
-void gameEntity::render2d(float draw_dist)
+#include <array>
+
+
+static std::array<std::string, 6> nonVerboseInfoStrings = {
+	"classname", "targetname", "spawnflags", 
+	"target", "script_noteworthy", "script_flag"
+};
+
+void gameEntity::render2d(float draw_dist, entity_info_type entType)
 {
+	if (entType == entity_info_type::eit_disabled)
+		return;
+
 	fvec3 org = g->r.currentOrigin;
-	fvec3 maxs = g->r.maxs;
 
 	org.z += (g->r.maxs[2] - g->r.mins[2]) / 2;
 
-	auto center = org;
-	float dist = center.dist(predictedPlayerState->origin);
+	const auto center = org;
+	const auto dist = center.dist(predictedPlayerState->origin);
 
 	if (dist > draw_dist)
 		return;
 
+
+
 	if (fields) {
 		std::string buff;
-		for (auto& field : fields->key_value)
+		for (const auto& [key, value] : fields->key_value)
 		{
-			buff += std::string(field.first) + " - " + field.second + "\n";
+			if (entType == entity_info_type::eit_enabled) {
+				if (std::ranges::find(nonVerboseInfoStrings, key) == nonVerboseInfoStrings.end())
+					continue;
+			}
+
+			buff += std::string(key) + " - " + value + "\n";
 		}
 
 		if (auto op = WorldToScreen(center)) {
@@ -56,7 +73,7 @@ brushModelEntity::brushModelEntity(gentity_s* gent) : gameEntity(gent) {
 			brushmodel bmodel(g);
 
 			bmodel.linked_brush = &cm->brushes[brushIdx];
-			auto result = CM_GetBrushPoints(bmodel.linked_brush, vec4_t{ 0.984f, 0.494f, 0.004f });
+			auto result = CM_GetBrushPoints(bmodel.linked_brush, { 1.f, 0.f, 0.f });
 			bmodel.brush_geometry = *dynamic_cast<cm_brush*>(result.get());
 			bmodel.original_geometry = bmodel.brush_geometry;
 
@@ -97,8 +114,10 @@ void brushModelEntity::render(const cm_renderinfo& info) {
 	}
 
 }
-void brushModelEntity::render2d(float draw_dist)
+void brushModelEntity::render2d(float draw_dist, entity_info_type entType)
 {
+	if (entType == entity_info_type::eit_disabled)
+		return;
 
 	for (auto& b : brushmodels)
 	{
@@ -110,16 +129,20 @@ void brushModelEntity::render2d(float draw_dist)
 
 		if (fields) {
 			std::string buff;
-			for (auto& field : fields->key_value)
+			for (const auto& [key, value] : fields->key_value)
 			{
-				buff += std::string(field.first) + " - " + field.second + "\n";
+				if (entType == entity_info_type::eit_enabled) {
+					if (std::ranges::find(nonVerboseInfoStrings, key) == nonVerboseInfoStrings.end())
+						continue;
+				}
+
+				buff += std::string(key) + " - " + value + "\n";
 			}
 
 			if (auto op = WorldToScreen(center)) {
-				auto p = (fvec2)op.value();
-				float scale = ScaleByDistance(dist) * 0.2f;
+				const auto p = (fvec2)op.value();
+				const float scale = ScaleByDistance(dist) * 0.2f;
 				R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
-
 			}
 
 		}
@@ -141,15 +164,17 @@ void brushModelEntity::brushmodel::render(const fvec3& _origin, const cm_renderi
 		return;
 
 	for (auto& w : brush_geometry.windings) {
-		vec4_t c = { 0,1,1,0.3f };
+		vec4_t c = { 1,0,0,0.3f };
 
-		c[0] = w.color[0];
-		c[1] = w.color[1];
-		c[2] = w.color[2];
+		if (info.as_polygons) {
+			c[0] = w.color[0];
+			c[1] = w.color[1];
+			c[2] = w.color[2];
+		}
 		c[3] = info.alpha;
 
 		auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
-		func(w.points.size(), (float(*)[3])w.points.data(), vec4_t{ 1,0,0,0.3f }, info.depth_test);
+		func(w.points.size(), (float(*)[3])w.points.data(), c, info.depth_test);
 	}
 
 }

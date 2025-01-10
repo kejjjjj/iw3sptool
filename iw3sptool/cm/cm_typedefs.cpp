@@ -73,11 +73,13 @@ void cm_brush::render(const cm_renderinfo& info)
 		if (info.only_elevators && w.is_elevator == false)
 			continue;
 
-		vec4_t c = { 0,1,1,0.3f };
+		vec4_t c = { 0,1,0,0.3f };
 
-		c[0] = w.color[0];
-		c[1] = w.color[1];
-		c[2] = w.color[2];
+		if (info.as_polygons) {
+			c[0] = w.color[0];
+			c[1] = w.color[1];
+			c[2] = w.color[2];
+		}
 		c[3] = info.alpha;
 
 		if (info.only_bounces) {

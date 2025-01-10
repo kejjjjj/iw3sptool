@@ -1,8 +1,10 @@
-#include <cmath>
 
 #include "bg_pmove.hpp"
-#include <dvar/dvar.hpp>
-#include <utils/functions.hpp>
+#include "dvar/dvar.hpp"
+#include "utils/functions.hpp"
+#include "utils/hook.hpp"
+
+#include <cmath>
 #include <unordered_map>
 #include <algorithm>
 
@@ -64,52 +66,19 @@ void Pmove(pmove_t* pm)
 }
 __declspec(naked) void PmoveSingleASM()
 {
+	constexpr static auto foliagesnd = 0x5BAD60;
+	constexpr static auto jmpaddr = 0x5BD303;
 	__asm
 	{
-		lea eax, [esp + 28h];
-		push eax;
+
+		add esp, 14h;
+		mov eax, ebx;
+		call foliagesnd;
+
 		push ebx;
-		call PM_OverBounce;
-		add esp, 0x8;
-		pop edi;
-		pop esi;
-		pop ebp;
-		pop ebx;
-		add esp, 98h;
-		retn;
-	}
-}
-void PM_SprintFix(playerState_s* ps, pmove_t* pm)
-{
-	static dvar_s* pm_fixed = Dvar_FindMalleableVar("pm_fixed");
-
-	//fixes a sprint bug when you can't reach target fps with pm_fixed
-
-	if (pm_fixed->current.enabled == false) {
-
-		__asm {
-			mov ecx, pm;
-			mov eax, ps;
-			mov esi, 0x5B7890;
-			call esi;
-		}
-
-	}
-	ps->sprintState.sprintButtonUpRequired = 1;
-}
-__declspec(naked) void PM_SprintFixASM()
-{
-	__asm
-	{
-		push ebp;
-		push edi;
-		call PM_SprintFix;
-		add esp, 0x8;
-		pop edi;
-		pop esi;
-		pop ebp;
-		pop ebx;
-		retn;
+		call PM_FoliageSnd;
+		add esp, 4;
+		jmp jmpaddr;
 	}
 }
 void Sys_SnapVector(float* v) {
@@ -134,37 +103,8 @@ void Sys_SnapVector(float* v) {
 
 
 }
-void PM_OverBounce(pmove_t* pm, pml_t* pml)
+void PM_FoliageSnd(pmove_t* pm)
 {
-	vec3_t move{};
-
-	move[0] = pm->ps->origin[0] - pml->previous_origin[0];
-	move[1] = pm->ps->origin[1] - pml->previous_origin[1];
-	move[2] = pm->ps->origin[2] - pml->previous_origin[2];
-
-	float dot = move[2] * move[2] + move[1] * move[1] + move[0] * move[0];
-	float dot_div_frametime = dot / (pml->frametime * pml->frametime);
-	float dot_speed = pm->ps->velocity[2] * pm->ps->velocity[2] + pm->ps->velocity[1] * pm->ps->velocity[1] + pm->ps->velocity[0] * pm->ps->velocity[0];
-
-	if (dot_speed * 0.25 > dot_div_frametime)
-	{
-		float inGameFramesPerSecond = 1.0f / pml->frametime;
-		pm->ps->velocity[0] = inGameFramesPerSecond * move[0];
-		pm->ps->velocity[1] = inGameFramesPerSecond * move[1];
-		pm->ps->velocity[2] = inGameFramesPerSecond * move[2];
-	}
-
-	float clampedFrametime = std::clamp(pml->frametime, 0.f, 1.f);
-
-	float diffX = pm->ps->velocity[0] - pm->ps->oldVelocity[0];
-	float diffY = pm->ps->velocity[1] - pm->ps->oldVelocity[1];
-
-	float frameX = clampedFrametime * diffX;
-	float frameY = clampedFrametime * diffY;
-
-	pm->ps->oldVelocity[0] = pm->ps->oldVelocity[0] + frameX;
-	pm->ps->oldVelocity[1] = pm->ps->oldVelocity[1] + frameY;
-
 	static dvar_s* pm_bounceFix = Dvar_FindMalleableVar("pm_bounceFix");
 	static dvar_s* pm_multiplayer = Dvar_FindMalleableVar("pm_multiplayer");
 
@@ -177,9 +117,43 @@ void PM_OverBounce(pmove_t* pm, pml_t* pml)
 		pm->ps->pm_flags = pm->ps->pm_flags & 0xFFFFFE7F | PMF_JUMPING; //reset bouncing flags
 		pm->ps->jumpOriginZ = previousZ;
 	}
-	
+
 	if (pm_multiplayer->current.enabled)
 		Sys_SnapVector(pm->ps->velocity);
+
+}
+
+
+void PM_OverBounce(pmove_t* pm, pml_t* pml)
+{
+	vec3_t move{};
+
+	move[0] = pm->ps->origin[0] - pml->previous_origin[0];
+	move[1] = pm->ps->origin[1] - pml->previous_origin[1];
+	move[2] = pm->ps->origin[2] - pml->previous_origin[2];
+
+	const auto dot = move[2] * move[2] + move[1] * move[1] + move[0] * move[0];
+	const auto dot_div_frametime = dot / (pml->frametime * pml->frametime);
+	const auto dot_speed = pm->ps->velocity[2] * pm->ps->velocity[2] + pm->ps->velocity[1] * pm->ps->velocity[1] + pm->ps->velocity[0] * pm->ps->velocity[0];
+
+	if (dot_speed * 0.25 > dot_div_frametime)
+	{
+		const auto inGameFramesPerSecond = 1.0f / pml->frametime;
+		pm->ps->velocity[0] = inGameFramesPerSecond * move[0];
+		pm->ps->velocity[1] = inGameFramesPerSecond * move[1];
+		pm->ps->velocity[2] = inGameFramesPerSecond * move[2];
+	}
+
+	const auto clampedFrametime = (1.f - pml->frametime < 0) ? 1.f : pml->frametime;
+
+	const auto diffX = pm->ps->velocity[0] - pm->ps->oldVelocity[0];
+	const auto diffY = pm->ps->velocity[1] - pm->ps->oldVelocity[1];
+
+	const auto frameX = clampedFrametime * diffX;
+	const auto frameY = clampedFrametime * diffY;
+
+	pm->ps->oldVelocity[0] = pm->ps->oldVelocity[0] + frameX;
+	pm->ps->oldVelocity[1] = pm->ps->oldVelocity[1] + frameY;
 
 	return;
 }
@@ -189,4 +163,39 @@ float CG_GetPlayerHitboxHeight(playerState_s* ps)
 	float maxs = static_cast<float>(stance.find(int(ps->viewHeightTarget))->second);
 
 	return maxs;
+}
+
+void PM_SprintFix(playerState_s* ps, pmove_t* pm)
+{
+	static dvar_s* pm_fixed = Dvar_FindMalleableVar("pm_fixed");
+
+	//fixes a sprint bug when you can't reach target fps with pm_fixed
+
+	if (pm_fixed->current.enabled == false) {
+
+		__asm {
+			mov ecx, pm;
+			mov eax, ps;
+			mov esi, 0x5B7890;
+			call esi;
+			retn;
+		}
+
+	}
+	ps->sprintState.sprintButtonUpRequired = 1;
+}
+__declspec(naked) void PM_SprintFixASM()
+{
+	__asm
+	{
+		push ebp;
+		push edi;
+		call PM_SprintFix;
+		add esp, 0x8;
+		pop edi;
+		pop esi;
+		pop ebp;
+		pop ebx;
+		retn;
+	}
 }
