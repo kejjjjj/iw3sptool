@@ -28,7 +28,6 @@
 - brushes are highlighted with green
 - terrain brushmodels are highlighted with purple
 - terrain is highlighted with blue
-- entities are highlighted with orange
-- spawners are highlighted with red
+- entities and spawners are highlighted with red
 
 ![image](https://github.com/kejjjjj/iw3sptool/assets/108032666/75698826-97fb-4777-9cd7-b3da8009faf4)
