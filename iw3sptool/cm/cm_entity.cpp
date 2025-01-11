@@ -1,279 +1,351 @@
+#include "cg/cg_local.hpp"
 #include "cg/cg_offsets.hpp"
 #include "cm_brush.hpp"
 #include "cm_entity.hpp"
 #include "cm_terrain.hpp"
+#include "cm_renderer.hpp"
+#include "cm_typedefs.hpp"
 #include "com/com_vector.hpp"
 #include "dvar/dvar.hpp"
 #include "r/r_drawtools.hpp"
 #include "r/rb_endscene.hpp"
 #include "scr/scr.hpp"
 #include "utils/functions.hpp"
+#include "g/g_spawn.hpp"
 
 #include <array>
+#include <cassert>
+#include <ranges>
 
+using namespace std::string_literals;
 
 static std::array<std::string, 6> nonVerboseInfoStrings = {
 	"classname", "targetname", "spawnflags", 
 	"target", "script_noteworthy", "script_flag"
 };
 
-void gameEntity::render2d(float draw_dist, entity_info_type entType)
+void CGentities::CM_LoadAllEntitiesToClipMapWithFilters(const std::unordered_set<std::string>& filters)
+{
+
+	ClearThreadSafe();
+	std::unique_lock<std::mutex> lock(GetLock());
+
+	//reset spawnvars
+	G_ResetEntityParsePoint();
+
+	for (const auto i : std::views::iota(0, level->num_entities)) {
+
+		auto gentity = &level->gentities[i];
+
+		if (!CM_IsMatchingFilter(filters, Scr_GetString(gentity->classname)))
+			continue;
+
+		Insert(CGameEntity::CreateEntity(gentity));
+	}
+
+	//ForEach([](GentityPtr_t& p) {
+	//	p->GenerateConnections(m_pLevelGentities);
+	//});
+}
+
+CGameEntity::CGameEntity(gentity_s* const g) :
+	m_pOwner(g),
+	m_vecOrigin((fvec3&)g->r.currentOrigin),
+	m_vecAngles((fvec3&)g->r.currentAngles)
+{
+	assert(m_pOwner != nullptr);
+
+	ParseEntityFields();
+
+}
+CGameEntity::~CGameEntity() = default;
+
+void CGameEntity::ParseEntityFields()
+{
+	const auto spawnVar = G_GetGentitySpawnVars(m_pOwner);
+
+	if (!spawnVar)
+		return;
+
+	for (const auto index : std::views::iota(0, spawnVar->numSpawnVars)) {
+		const auto [key, value] = std::tie(spawnVar->spawnVars[index][0], spawnVar->spawnVars[index][1]);
+
+		for (auto f = ent_fields; f->name; ++f) {
+			if (!strcmp(f->name, key)) {
+				m_oEntityFields[key] = value;
+			}
+		}
+	}
+
+}
+std::unique_ptr<CGameEntity> CGameEntity::CreateEntity(gentity_s* const g)
+{
+	if (g->r.bmodel)
+		return std::make_unique<CBrushModel>(g);
+
+	else if (G_EntityIsSpawner(Scr_GetString(g->classname)))
+		return std::make_unique<CSpawnerEntity>(g);
+
+	else if (Scr_GetString(g->classname) == "trigger_radius"s) {
+		return std::move(std::make_unique<CRadiusEntity>(g));
+	}
+
+	return std::make_unique<CGameEntity>(g);
+}
+
+bool CGameEntity::IsBrushModel() const noexcept
+{
+	assert(m_pOwner != nullptr);
+	return m_pOwner->r.bmodel;
+}
+void CGameEntity::RB_Render3D(const cm_renderinfo& info) const
+{
+
+	if (m_vecOrigin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return;
+
+	//RB_RenderConnections(info);
+
+	if (!BoundsInView(m_pOwner->r.absmin, m_pOwner->r.absmax, info.frustum_planes, info.num_planes))
+		return;
+
+	//const vec4_t CYAN = { 0.f, 1.f, 1.f, info.alpha };
+	//(info.as_polygons ? CM_DrawBoxPolygons : CM_DrawBoxEdges)(m_pOwner->r.absmin, m_pOwner->r.absmax, info.depth_test, CYAN);
+}
+void CGameEntity::CG_Render2D(float draw_dist, entity_info_type entType) const
 {
 	if (entType == entity_info_type::eit_disabled)
 		return;
 
-	fvec3 org = g->r.currentOrigin;
-
-	org.z += (g->r.maxs[2] - g->r.mins[2]) / 2;
-
-	const auto center = org;
-	const auto dist = center.dist(predictedPlayerState->origin);
+	const auto dist = m_vecOrigin.dist(predictedPlayerState->origin);
 
 	if (dist > draw_dist)
 		return;
 
+	const fvec3 center = {
+		m_pOwner->r.currentOrigin[0],
+		m_pOwner->r.currentOrigin[1],
+		m_pOwner->r.currentOrigin[2] + (m_pOwner->r.maxs[2] - m_pOwner->r.mins[2]) / 2
+	};
 
 
-	if (fields) {
-		std::string buff;
-		for (const auto& [key, value] : fields->key_value)
-		{
-			if (entType == entity_info_type::eit_enabled) {
-				if (std::ranges::find(nonVerboseInfoStrings, key) == nonVerboseInfoStrings.end())
-					continue;
-			}
-
-			buff += std::string(key) + " - " + value + "\n";
+	std::string buff;
+	for (const auto& [key, value] : m_oEntityFields) {
+		if (entType == entity_info_type::eit_enabled) {
+			if (std::ranges::find(nonVerboseInfoStrings, key) == nonVerboseInfoStrings.end())
+				continue;
 		}
 
-		if (auto op = WorldToScreen(center)) {
-			const auto p = (fvec2)op.value();
-			const float scale = ScaleByDistance(dist) * 0.2f;
-			R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
-		}
+		buff += std::string(key) + " - " + value + "\n";
+	}
 
+	if (auto op = WorldToScreen(center)) {
+		const float scale = ScaleByDistance(dist) * 0.15f;
+		R_DrawTextWithEffects(buff, "fonts/bigdevFont", op->x, op->y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
 	}
 }
 
-brushModelEntity::brushModelEntity(gentity_s* gent) : gameEntity(gent) {
+/***********************************************************************
+ > BRUSHMODELS
+***********************************************************************/
 
-	auto leaf = &cm->cmodels[g->s.index.brushmodel].leaf;
-
-	auto& leafBrushNode = cm->leafbrushNodes[leaf->leafBrushNode];
-	short numBrushes = leafBrushNode.leafBrushCount;
-
-	//a brush
-	if (numBrushes >= 1) {
-		for (short i = 0; i < numBrushes; i++) {
-			uint16_t brushIdx = leafBrushNode.data.leaf.brushes[i];
-
-			if (brushIdx >= cm->numBrushes)
-				return;
-
-			brushmodel bmodel(g);
-
-			bmodel.linked_brush = &cm->brushes[brushIdx];
-			auto result = CM_GetBrushPoints(bmodel.linked_brush, { 1.f, 0.f, 0.f });
-			bmodel.brush_geometry = *dynamic_cast<cm_brush*>(result.get());
-			bmodel.original_geometry = bmodel.brush_geometry;
-
-			brushmodels.push_back(std::move(std::make_unique<brushmodel>(bmodel)));
-		}
-	}
-	if (const auto t = CM_GetTerrainTriangles(leaf, { "all" })) {
-		terrainmodel tm(g);
-
-		tm.leaf = leaf;
-		tm.terrain = *dynamic_cast<cm_terrain*>(t.get());
-		tm.original_terrain = tm.terrain;
-
-		brushmodels.push_back(std::move(std::make_unique<terrainmodel>(tm)));
-	}
-
-}
-void brushModelEntity::render(const cm_renderinfo& info) {
-
-	const showCollisionType cm_type = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
-	if (*origin != oldOrigin || *orientation != oldOrientation) {
-
-		for (auto& b : brushmodels) {
-			b->on_position_changed(*origin, *orientation);
-		}
-
-		oldOrigin = *origin;
-		oldOrientation = *orientation;
-	}
-
-	for (auto& b : brushmodels) {
-
-		if (b->get_type() == brushmodel_type::BRUSH && cm_type == showCollisionType::TERRAIN ||
-			b->get_type() == brushmodel_type::TERRAIN && cm_type == showCollisionType::BRUSHES)
-			continue;
-
-		b->render(*origin, info);
-	}
-
-}
-void brushModelEntity::render2d(float draw_dist, entity_info_type entType)
+CBrushModel::CBrushModel(gentity_s* const g) : CGameEntity(g) 
 {
-	if (entType == entity_info_type::eit_disabled)
-		return;
+	assert(IsBrushModel());
 
-	for (auto& b : brushmodels)
-	{
-		auto center = b->get_center();
-		float dist = center.dist(predictedPlayerState->origin);
+	&cm->cmodels[1].leaf;
+	const auto leaf = &cm->cmodels[g->s.index.brushmodel].leaf;
+	const auto& leafBrushNode = cm->leafbrushNodes[leaf->leafBrushNode];
+	const auto numBrushes = leafBrushNode.leafBrushCount;
 
-		if (dist > draw_dist)
-			continue;
 
-		if (fields) {
-			std::string buff;
-			for (const auto& [key, value] : fields->key_value)
-			{
-				if (entType == entity_info_type::eit_enabled) {
-					if (std::ranges::find(nonVerboseInfoStrings, key) == nonVerboseInfoStrings.end())
-						continue;
-				}
+	//brush
+	if (numBrushes > 0) {
+		for (const auto brushIndex : std::views::iota(0, numBrushes)) {
+			const auto brushWorldIndex = leafBrushNode.data.leaf.brushes[brushIndex];
+			if (brushWorldIndex > cm->numBrushes)
+				break;
 
-				buff += std::string(key) + " - " + value + "\n";
-			}
-
-			if (auto op = WorldToScreen(center)) {
-				const auto p = (fvec2)op.value();
-				const float scale = ScaleByDistance(dist) * 0.2f;
-				R_DrawTextWithEffects(buff, "fonts/bigdevFont", p.x, p.y, scale, scale, 0, vec4_t{ 1,1,1,1 }, 3, vec4_t{ 1,0,0,0 });
-			}
-
+			m_oBrushModels.emplace_back(std::make_unique<CBrush>(g, &cm->brushes[brushWorldIndex]));
 		}
-	}
-}
-
-void brushModelEntity::brushmodel::render(const fvec3& _origin, const cm_renderinfo& info) {
-
-	if (brush_geometry.brush == nullptr)
 		return;
+	}
 
-	fvec3 mins = _origin + fvec3(linked_brush->mins);
-	fvec3 maxs = _origin + fvec3(linked_brush->maxs);
+	//terrain
+	cm_terrain terrain(leaf, { "all " });
 
-	if (brush_geometry.origin.dist(predictedPlayerState->origin) > info.draw_dist)
-		return;
-
-	if (CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes) == false)
-		return;
-
-	for (auto& w : brush_geometry.windings) {
-		vec4_t c = { 1,0,0,0.3f };
-
-		if (info.as_polygons) {
-			c[0] = w.color[0];
-			c[1] = w.color[1];
-			c[2] = w.color[2];
-		}
-		c[3] = info.alpha;
-
-		auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
-		func(w.points.size(), (float(*)[3])w.points.data(), c, info.depth_test);
+	if (terrain.IsValid()) {
+		m_oBrushModels.emplace_back(std::make_unique<CTerrain>(g, leaf, terrain));
 	}
 
 }
+CBrushModel::~CBrushModel() = default;
 
-void brushModelEntity::brushmodel::on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) {
-	brush_geometry = original_geometry;
-	brush_geometry.origin = _origin;
-
-	for (auto& winding : brush_geometry.windings) {
-		for (auto& w : winding.points) {
-			w += _origin;
-
-			w = VectorRotate(w, delta_angles, brush_geometry.origin);
-		}
-	}
-}
-fvec3 brushModelEntity::brushmodel::get_center() const noexcept(true) {
-	return g->r.currentOrigin;
-}
-
-
-void brushModelEntity::terrainmodel::render([[maybe_unused]] const fvec3& _origin, const cm_renderinfo& info) {
-	terrain.render(info);
-}
-void brushModelEntity::terrainmodel::on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) {
-	terrain = original_terrain;
-
-	for (auto& t : terrain.tris) {
-		t.a += _origin;
-		t.b += _origin;
-		t.c += _origin;
-
-		fvec3 c = g->r.currentOrigin;
-
-		t.a = VectorRotate(t.a, delta_angles, c);
-		t.b = VectorRotate(t.b, delta_angles, c);
-		t.c = VectorRotate(t.c, delta_angles, c);
-
-	}
-}
-fvec3 brushModelEntity::terrainmodel::get_center() const noexcept(true) {
-	return g->r.currentOrigin;
-
-}
-
-
-spawnerEntity::spawnerEntity(gentity_s* gent) : gameEntity(gent),
-	geometry(CM_CreateSphere({ origin->x, origin->y, origin->z + 36 }, 1.f, 5, 5, { 16,16,36 })) 
+void CBrushModel::RB_Render3D(const cm_renderinfo & info) const
 {
+	//RB_RenderConnections(info);
+
+	for (auto& bmodel : m_oBrushModels) {
+
+		if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles)
+			bmodel->OnPositionChanged(m_vecOrigin, m_vecAngles);
+
+		bmodel->RB_Render3D(info);
+	}
+
+	m_vecOldOrigin = m_vecOrigin;
+	m_vecOldAngles = m_vecAngles;
 }
 
-void spawnerEntity::render(const cm_renderinfo& info) {
+CBrushModel::CIndividualBrushModel::CIndividualBrushModel(gentity_s* const g) : m_pOwner(g) { assert(g != nullptr); }
+CBrushModel::CIndividualBrushModel::~CIndividualBrushModel() = default;
 
-	if (*origin != oldOrigin || *orientation != oldOrientation) {
+void CBrushModel::CIndividualBrushModel::RB_Render3D(const cm_renderinfo & info) const
+{
+	GetSource().render(info);
+}
 
-		fvec3 org = g->r.currentOrigin;
-		fvec3 maxs = g->r.maxs;
+fvec3 CBrushModel::CIndividualBrushModel::GetCenter() const noexcept
+{
+	assert(m_pOwner != nullptr);
+	return m_pOwner->r.currentOrigin;
+}
 
-		org.z += (maxs.z - g->r.mins[2]) / 2;
+CBrushModel::CBrush::CBrush(gentity_s* const g, const cbrush_t* const brush) : CIndividualBrushModel(g), m_pSourceBrush(brush)
+{
+	assert(m_pSourceBrush != nullptr);
+
+	const vec3_t CYAN = { 0.f, 1.f, 1.f };
+
+	//questionable for sure!
+	m_oOriginalGeometry = *dynamic_cast<cm_brush*>(&*CM_GetBrushPoints(m_pSourceBrush, CYAN));
+	m_oCurrentGeometry = m_oOriginalGeometry;
+
+	OnPositionChanged(g->r.currentOrigin, g->r.currentAngles);
+
+
+}
+CBrushModel::CBrush::~CBrush() = default;
+
+void CBrushModel::CBrush::OnPositionChanged(const fvec3& newOrigin, const fvec3 & newAngles)
+{
+	m_oCurrentGeometry = m_oOriginalGeometry;
+
+	for (auto& winding : m_oCurrentGeometry.windings) {
+		for (auto& point : winding.points) {
+			point = VectorRotate(point + newOrigin, newAngles, m_oCurrentGeometry.origin);
+		}
+	}
+
+
+}
+
+const cm_geometry& CBrushModel::CBrush::GetSource() const noexcept
+{
+	return m_oCurrentGeometry;
+}
+
+void CBrushModel::CBrush::RB_Render3D(const cm_renderinfo & info) const
+{
+	if (((fvec3&)m_pOwner->r.currentOrigin).dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return;
+
+	const auto center = GetCenter();
+
+	if (BoundsInView(center + m_pSourceBrush->mins, center + m_pSourceBrush->maxs, info.frustum_planes, info.num_planes) == false)
+		return;
+
+	const auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
+
+	for (const auto& w : m_oCurrentGeometry.windings) {
+		const vec4_t color = { w.color[0], w.color[1], w.color[2], info.alpha };
+		func(w.points, color, info.depth_test);
+	}
+
+}
+
+CBrushModel::CTerrain::CTerrain(gentity_s* const g, const cLeaf_t* const leaf) : CIndividualBrushModel(g), m_pSourceLeaf(leaf) {}
+CBrushModel::CTerrain::CTerrain(gentity_s* const g, const cLeaf_t* const leaf, const cm_terrain & terrain)
+	: CIndividualBrushModel(g), m_pSourceLeaf(leaf), m_oOriginalGeometry(terrain), m_oCurrentGeometry(terrain)
+{
+	OnPositionChanged(g->r.currentOrigin, g->r.currentAngles);
+}
+
+CBrushModel::CTerrain::~CTerrain() = default;
+
+void CBrushModel::CTerrain::OnPositionChanged(const fvec3 & newOrigin, const fvec3 & newAngles)
+{
+	m_oCurrentGeometry = m_oOriginalGeometry;
+
+	const auto center = GetCenter();
+
+	for (auto& tri : m_oCurrentGeometry.tris) {
+		tri.a = VectorRotate(tri.a + newOrigin, newAngles, center);
+		tri.b = VectorRotate(tri.b + newOrigin, newAngles, center);
+		tri.c = VectorRotate(tri.c + newOrigin, newAngles, center);
+
+	}
+
+}
+const cm_geometry& CBrushModel::CTerrain::GetSource() const noexcept
+{
+	return m_oCurrentGeometry;
+}
+
+CSpawnerEntity::CSpawnerEntity(gentity_s* gent) : CGameEntity(gent),
+	geometry(CM_CreateSphere({ m_vecOrigin.x, m_vecOrigin.y, m_vecOrigin.z + 36 }, 1.f, 5, 5, { 16,16,36 })){}
+
+void CSpawnerEntity::RB_Render3D(const cm_renderinfo& info) const {
+
+	if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles) {
+
+		fvec3 org = m_pOwner->r.currentOrigin;
+		fvec3 maxs = m_pOwner->r.maxs;
+
+		org.z += (maxs.z - m_pOwner->r.mins[2]) / 2;
 		maxs.z /= 2;
 
 		geometry = CM_CreateSphere(org, 1.f, 5, 5, maxs);
 
-		oldOrigin = *origin;
-		oldOrientation = *orientation;
+		m_vecOldOrigin = m_vecOrigin;
+		m_vecOldAngles = m_vecAngles;
 	}
 
-	if (origin->dist(predictedPlayerState->origin) > info.draw_dist)
+	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
 		return;
 
-	auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
+	auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
 
-	func(geometry.size(), (float(*)[3])geometry.data(), vec4_t{ 1,0,0,0.3f }, info.depth_test);
-
+	func(geometry, vec4_t{ 1,0,0,0.3f }, info.depth_test);
 }
 
 
-void radiusEntity::refresh_geometry() {
+void CRadiusEntity::RefreshGeometry() {
 
-	float radius = RadiusFromBounds(g->r.mins, g->r.maxs);
-	if (fields) {
-		for (auto& field : fields->key_value) {
-			if (field.first == "targetname" && field.second.contains("radiation"))
-				radius *= Dvar_FindMalleableVar("cm_radiation_radius_scale")->current.value;
+	if (m_oEntityFields.empty())
+		return;
 
-		}
+	auto radius = RadiusFromBounds(m_pOwner->r.mins, m_pOwner->r.maxs);
+
+	for (const auto& [key, value] : m_oEntityFields) {
+		if (key == "targetname" && value.contains("radiation"))
+			radius *= Dvar_FindMalleableVar("cm_radiation_radius_scale")->current.value;
 
 	}
+
+	auto& g = m_pOwner;
 
 	xy_cylinder_bottom.clear();
 	xy_cylinder_side.clear();
 	xy_cylinder_top.clear();
 
-	constexpr int NUM_VERTS = 24;
-	float angleIncrement = 2.f * M_PI / NUM_VERTS;
+	constexpr auto NUM_VERTS = 24;
+	constexpr auto angleIncrement = 2.f * M_PI / NUM_VERTS;
+
 	for (int i = 0; i < NUM_VERTS; ++i) {
 		auto angle = i * angleIncrement;
-		auto x = origin->x + radius * cosf(angle);
-		auto y = origin->y + radius * sinf(angle);
+		auto x = m_vecOrigin.x + radius * cosf(angle);
+		auto y = m_vecOrigin.y + radius * sinf(angle);
 
 		xy_cylinder_top.push_back({ x, y, g->r.currentOrigin[2] + g->r.maxs[2] });
 		xy_cylinder_bottom.push_back({ x, y, g->r.currentOrigin[2] - g->r.mins[2] });
@@ -282,10 +354,10 @@ void radiusEntity::refresh_geometry() {
 	for (int i = 0; i < NUM_VERTS; ++i) {
 		auto angle1 = i * angleIncrement;
 		auto angle2 = (i + 1) * angleIncrement;
-		auto x1 = origin->x + radius * cosf(angle1);
-		auto y1 = origin->y + radius * sinf(angle1);
-		auto x2 = origin->x + radius * cosf(angle2);
-		auto y2 = origin->y + radius * sinf(angle2);
+		auto x1 = m_vecOrigin.x + radius * cosf(angle1);
+		auto y1 = m_vecOrigin.y + radius * sinf(angle1);
+		auto x2 = m_vecOrigin.x + radius * cosf(angle2);
+		auto y2 = m_vecOrigin.y + radius * sinf(angle2);
 
 		// Quad vertices
 		xy_cylinder_side.push_back({ x1, y1, g->r.currentOrigin[2] + g->r.maxs[2] }); // Vertex on top circle
@@ -295,17 +367,16 @@ void radiusEntity::refresh_geometry() {
 	}
 }
 
-void radiusEntity::render(const cm_renderinfo& info) {
+void CRadiusEntity::RB_Render3D(const cm_renderinfo& info) const {
 
-	if (origin->dist(predictedPlayerState->origin) > info.draw_dist)
+	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
 		return;
 
-	auto func = info.as_polygons ? RB_DrawCollisionPoly : RB_DrawCollisionEdges;
+	auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
 
-	func(xy_cylinder_top.size(), (float(*)[3])xy_cylinder_top.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
-	func(xy_cylinder_bottom.size(), (float(*)[3])xy_cylinder_bottom.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
-	func(xy_cylinder_side.size(), (float(*)[3])xy_cylinder_side.data(), vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
-
+	func(xy_cylinder_top, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+	func(xy_cylinder_bottom, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+	func(xy_cylinder_side, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
 }
 
 bool G_EntityIsSpawner(const std::string& classname)
@@ -317,22 +388,4 @@ bool G_EntityIsSpawner(const std::string& classname)
 			return true;
 	}
 	return false;
-}
-std::unique_ptr<gameEntity> gameEntity::createEntity(gentity_s* gent) {
-
-	if (gameEntities::getInstance().it_is_ok_to_load_entities == false)
-		return nullptr;
-
-	if (gent->r.bmodel) {
-		std::unique_ptr<brushModelEntity>&& bmodel = std::move(std::make_unique<brushModelEntity>(gent));
-		return bmodel->valid_entity() ? std::move(bmodel) : nullptr;
-	}
-	else if (G_EntityIsSpawner(Scr_GetString(gent->classname))) {
-		return std::move(std::make_unique<spawnerEntity>(gent));
-	}
-	else if (Scr_GetString(gent->classname) == std::string("trigger_radius")) {
-		return std::move(std::make_unique<radiusEntity>(gent));
-	}
-
-	return nullptr;
 }

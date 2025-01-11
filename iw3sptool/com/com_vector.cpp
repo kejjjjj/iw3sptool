@@ -93,7 +93,7 @@ int BoxOnPlaneSide(const fvec3& emins, const fvec3& emaxs, cplane_s* p) {
 	return (2 * (dist2 < p->dist)) | (dist1 > p->dist);
 }
 
-void BuildFrustumPlanes([[maybe_unused]]const GfxViewParms* viewParms, cplane_s* frustumPlanes)
+void BuildFrustumPlanes(cplane_s* frustumPlanes)
 {
 
 	for (int i = 0; i < 5; i++) {
@@ -120,9 +120,9 @@ void BuildFrustumPlanes([[maybe_unused]]const GfxViewParms* viewParms, cplane_s*
 
 	}
 }
-void CreateFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustum_planes)
+void CreateFrustumPlanes(cplane_s* frustum_planes)
 {
-	BuildFrustumPlanes(viewParms, frustum_planes);
+	BuildFrustumPlanes(frustum_planes);
 
 	frustum_planes[5].normal[0] = -frustum_planes[4].normal[0];
 	frustum_planes[5].normal[1] = -frustum_planes[4].normal[1];
@@ -487,4 +487,19 @@ float AngleNormalize90(float angle)
 }
 float AngleDelta(float angle1, float angle2) {
 	return AngleNormalize180(angle1 - angle2);
+}
+
+bool BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frustumPlanes, int numPlanes)
+{
+	if (numPlanes <= 0)
+		return true;
+
+	cplane_s* plane = frustumPlanes;
+	auto idx = 0;
+	while ((BoxOnPlaneSide(mins, maxs, plane++) & 1) != 0) {
+		if (++idx >= numPlanes)
+			return true;
+	}
+
+	return false;
 }

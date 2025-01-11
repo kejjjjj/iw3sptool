@@ -9,9 +9,17 @@ using is_any_pointer = std::disjunction<
 	std::is_pointer<T>
 >;
 
+template<typename T>
+concept MemoryAddress_t = std::is_integral_v<T> || std::is_pointer_v<T>;
+
+
 namespace Engine
 {
-
+	template<typename Return, MemoryAddress_t Mem, typename ... Args>
+	constexpr inline Return call(const Mem address, Args... args)
+	{
+		return (reinterpret_cast<Return(*)(Args...)>(address))(args...);
+	}
 }
 
 

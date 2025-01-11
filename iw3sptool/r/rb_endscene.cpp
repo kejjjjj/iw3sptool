@@ -5,9 +5,12 @@
 #include "utils/hook.hpp"
 #include <iostream>
 
-void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const float* c, bool two_sided, bool depthTest)
+void RB_DrawPolyInteriors(const std::vector<fvec3>& points, const float* c, bool two_sided, bool depthTest)
 {
-	if (n_points < 3)
+	auto n_points = points.size();
+
+	//partly copied from iw3xo :)
+	if (n_points < 3u)
 		return;
 
 	BYTE color[4];
@@ -47,7 +50,7 @@ void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const float*
 		RB_EndTessSurface();
 		RB_BeginSurface(gfxCmdBufState->origTechType, gfxCmdBufState->origMaterial);
 	}
-	int idx = 0;
+	size_t idx{};
 
 	for (; idx < n_points; ++idx) {
 		vec3_t p = { points[idx].x, points[idx].y, points[idx].z };
@@ -68,35 +71,32 @@ void RB_DrawPolyInteriors(int n_points, std::vector<fvec3>& points, const float*
 
 
 }
-int RB_AddDebugLine(GfxPointVertex* verts, const vec_t* start, vec_t* end, const BYTE* color, int vertCount)
+int RB_AddDebugLine(GfxPointVertex* verts, char depthTest, const vec_t* start, const vec_t* end, const float* color, int vertCount)
 {
 
 	int _vc = vertCount;
-	uint8_t _color[4]{ 0,0,0,0 };
 	if (vertCount + 2 > 2725)
 	{
-		//RB_DrawLines3D(vertCount / 2, 1, verts, depthTest);
+		RB_DrawLines3D(vertCount / 2, 1, verts, depthTest);
 		_vc = 0;
 	}
 
-	//if (color) {
-	//	R_ConvertColorToBytes(color, vert->color);
-	//}
+	GfxPointVertex* vert = &verts[_vc];
+	if (color) {
+		R_ConvertColorToBytes(color, vert->color);
+	}
 
-	VectorCopy(color, verts[_vc].color);
-	verts[_vc].color[3] = color[3];
-	verts[_vc + 1].color[0] = verts[_vc].color[0];
-	verts[_vc + 1].color[1] = verts[_vc].color[1];
-	verts[_vc + 1].color[2] = verts[_vc].color[2];
-	verts[_vc + 1].color[3] = verts[_vc].color[3];
+	verts[_vc + 1].color[0] = vert->color[0];
+	verts[_vc + 1].color[1] = vert->color[1];
+	verts[_vc + 1].color[2] = vert->color[2];
+	verts[_vc + 1].color[3] = vert->color[3];
 
-	VectorCopy(start, verts[_vc].xyz);
-	VectorCopy(end, verts[_vc + 1].xyz);
+	VectorCopy(start, vert->xyz);
 
+	vert = &verts[_vc + 1];
+	VectorCopy(end, vert->xyz);
 
 	return _vc + 2;
-
-	//return ((int(*)(GfxPointVertex *, char, const vec_t *, vec_t *, const vec_t *, int))0x658210)(verts, depthTest, start, end, color, vertCount);
 }
 void R_ConvertColorToBytes(const vec4_t in, uint8_t* out)
 {
@@ -185,13 +185,6 @@ void RB_SetPolyVertice(const vec3_t pos, const BYTE* col, const int vert, const 
 	}
 
 	tess->verts[vert].normal.packed = normal ? Vec3PackUnitVec(normal) : 1073643391;
-}
-char RB_DrawDebug(GfxViewParms* viewParms)
-{
-	RB_ShowCollision(viewParms);
-	RB_RenderPlayerHitboxes();
-
-	return hooktable::find<char, GfxViewParms*>(HOOK_PREFIX(__func__))->call(viewParms);
 }
 
 void R_AddDebugBox(const float* mins, const float* maxs, DebugGlobals* debugGlobalsEntry, float* color)

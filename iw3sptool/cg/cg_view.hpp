@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cg/cg_offsets.hpp"
+struct cg_s;
 
 void CG_OffsetFirstPersonView(cg_s* cgs);
 void CG_OffsetThirdPersonViewASM();

@@ -1,24 +1,25 @@
 #include "cm_model.hpp"
 #include "cm_brush.hpp"
-#include <com/com_vector.hpp>
+#include "cm_typedefs.hpp"
+
+#include "com/com_vector.hpp"
+
 #include <fstream>
 #include <iomanip>
 
 void CM_AddModel(GfxStaticModelDrawInst* model)
 {
-	CClipMap::wip_geom = std::make_unique<cm_model>();
+	cm_model xmodel;
 
-	auto xmodel = dynamic_cast<cm_model*>(CClipMap::wip_geom.get());
+	xmodel.modelscale = model->placement.scale;
+	xmodel.origin = model->placement.origin;
+	xmodel.angles = AxisToAngles(model->placement.axis);
+	xmodel.name = model->model->name;
 
-	xmodel->modelscale = model->placement.scale;
-	xmodel->origin = model->placement.origin;
-	xmodel->angles = AxisToAngles(model->placement.axis);
-	xmodel->name = model->model->name;
-
-	CClipMap::InsertGeometry(CClipMap::wip_geom);
+	CClipMap::Insert(std::make_unique<cm_model>(xmodel));
 }
 
-int cm_model::map_export(std::ofstream& o, int index)
+int cm_model::map_export(std::ofstream& o, int index) const
 {
 
 	o << "// entity " << index << '\n';

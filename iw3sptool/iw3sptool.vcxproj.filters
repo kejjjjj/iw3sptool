@@ -180,6 +180,12 @@
     <ClInclude Include="cl\cl_keymove.hpp">
       <Filter>Source Files\cl</Filter>
     </ClInclude>
+    <ClInclude Include="g\g_spawn.hpp">
+      <Filter>Source Files\g</Filter>
+    </ClInclude>
+    <ClInclude Include="cm\cm_renderer.hpp">
+      <Filter>Source Files\cm</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -277,6 +283,12 @@
     </ClCompile>
     <ClCompile Include="cl\cl_keymove.cpp">
       <Filter>Source Files\cl</Filter>
+    </ClCompile>
+    <ClCompile Include="g\g_spawn.cpp">
+      <Filter>Source Files\g</Filter>
+    </ClCompile>
+    <ClCompile Include="cm\cm_renderer.cpp">
+      <Filter>Source Files\cm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

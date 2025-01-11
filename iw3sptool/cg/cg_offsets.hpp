@@ -14,7 +14,7 @@ inline r_global_permanent_t* rgp = reinterpret_cast<r_global_permanent_t*>(0x162
 inline GfxCmdBufState* gfxCmdBufState = reinterpret_cast<GfxCmdBufState*>(0x1D37F70);
 inline DpvsGlob* dpvsGlob = reinterpret_cast<DpvsGlob*>(0x189A328);
 inline gentity_s* gentities = reinterpret_cast<gentity_s*>(0xC81418);
-inline refdef_s* refdef = (refdef_s*)(0x720080 - 8);
+//inline refdef_s* refdef = (refdef_s*)(0x720080 - 8);
 inline WinMouseVars_t* s_wmv = (WinMouseVars_t*)(0x13E06F0);
 inline level_locals_t* level = reinterpret_cast<level_locals_t*>(0xE18E18);
 inline WeaponDef** BG_WeaponNames = reinterpret_cast<WeaponDef**>(0x14227A8);
@@ -25,3 +25,6 @@ inline cg_s* cgs = reinterpret_cast<cg_s*>(0x6FA590);
 inline GfxWorld* gfxWorld = reinterpret_cast<GfxWorld*>(0x189A048);
 
 inline clientUIActive_t* clientUI = reinterpret_cast<clientUIActive_t*>(0x85BD70);
+
+inline const char** g_entityBeginParsePoint = reinterpret_cast<const char**>(0xC1FEE8);
+inline const char** g_entityEndParsePoint = reinterpret_cast<const char**>(0xC1FEEC);

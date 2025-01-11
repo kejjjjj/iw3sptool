@@ -1,24 +1,26 @@
 #pragma once
 
+#include "typedefs.hpp"
+#include "global_macros.hpp"
+
 #include <unordered_set>
 #include <string>
-#include <cg/cg_local.hpp>
 #include <fstream>
-
+#include <mutex>
 enum class cm_geomtype
 {
 	brush,
 	terrain,
 	model
 };
-//struct cm_quad
-//{
-//	std::array<fvec3, 4> verts;
-//	cm_quad() = default;
-//	cm_quad(const fvec3& v1, const fvec3& v2, const fvec3& v3, const fvec3& v4) : verts{ v1, v2, v3, v4 } {}
-//
-//
-//};
+
+struct cplane_s;
+struct cbrush_t;
+struct cLeaf_t;
+struct CollisionAabbTree;
+struct adjacencyWinding_t;
+class CGameEntity;
+
 struct cm_triangle
 {
 	fvec3 a;
@@ -141,79 +143,84 @@ class brushModelEntity;
 struct cm_geometry
 {
 	virtual ~cm_geometry() = default;
-	virtual void render(const cm_renderinfo& info) = 0;
+	virtual void render(const cm_renderinfo& info) const = 0;
 	virtual cm_geomtype type() const noexcept = 0;
-	virtual int map_export(std::ofstream& o, int index) = 0;
+	virtual int map_export(std::ofstream& o, int index) const = 0;
 	virtual void render2d() = 0;
 	fvec3 origin;
 	bool has_collisions = {};
+	int originalContents = {};
 	int num_verts = {};
-	brushModelEntity* brushmodel = 0;
-
 };
 
 
 struct cm_brush : public cm_geometry
 {
+	friend class CBrushModel;
+
 	~cm_brush() = default;
+
+	cm_geomtype type() const noexcept override { return cm_geomtype::brush; }
+
+	void create_corners();
+	void render(const cm_renderinfo& info) const override;
+	void render2d() override {}
+
+	friend void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2);
+	friend std::unique_ptr<cm_geometry> CM_GetBrushPoints(const cbrush_t* brush, const fvec3& poly_col);
+
+	cbrush_t* brush = {};
+
+protected:
+	int map_export(std::ofstream& o, int index) const override;
+private:
 
 	std::vector<cm_winding> windings; //used for rendering
 	std::vector<cm_triangle> triangles; //used for exporting
 
-	struct ele_corner {
-		fvec3 mins;
-		fvec3 maxs;
-	};
+	struct ele_corner { fvec3 mins; fvec3 maxs; };
 
 	std::vector<const cm_winding*> corners;
 
-	cbrush_t* brush = {};
-	void* scr_brushmodel = 0;
-
-
-	void create_corners();
-	void render(const cm_renderinfo& info) override;
-	cm_geomtype type() const noexcept override { return cm_geomtype::brush; }
-	void render2d() override {}
-	void link_brushmodel();
-protected:
-	int map_export(std::ofstream& o, int index) override;
 };
 
 struct cm_terrain : public cm_geometry
 {
-	~cm_terrain() = default;
+	friend class CBrushModel;
 
-	void render(const cm_renderinfo& info) override;
+	~cm_terrain() = default;
+	cm_terrain() = default;
+	cm_terrain(const cLeaf_t* leaf, const std::unordered_set<std::string>& filters);
+
+	[[nodiscard]] constexpr cm_geomtype type() const noexcept override { return cm_geomtype::terrain; }
+
+	void render(const cm_renderinfo& info) const override;
 	void render2d() override;
 
-	//void sort_tree();
+	[[nodiscard]] constexpr bool IsValid() const noexcept { return !!leaf; }
 
-	cLeaf_t* leaf = 0;
-	std::vector<cm_triangle> tris;
-	//std::vector<cm_quad> quads;
-	vec4_t color = {};
-	char* material = {};
-	//std::vector<cm_terrain> children = {};
-
-	cm_geomtype type() const noexcept override { return cm_geomtype::terrain; }
+	friend void CM_AdvanceAabbTree(cm_terrain& terrain, const CollisionAabbTree* aabbTree, const std::unordered_set<std::string>& filters, const float* color);
 
 protected:
-	int map_export(std::ofstream& o, int index) override;
-	int map_export_triangle(std::ofstream& o, const cm_triangle& tri, int index) const;
-	//int map_export_quad(std::ofstream& o, const cm_quad& quad, int index) const;
+	[[nodiscard]] int map_export(std::ofstream& o, int index) const override;
+	[[nodiscard]] int map_export_triangle(std::ofstream& o, const cm_triangle& tri, int index) const;
 
 private:
+	const cLeaf_t* leaf = 0;
+	std::vector<cm_triangle> tris;
+	char* material = {};
+
 };
+
 
 struct cm_model : public cm_geometry
 {
 	~cm_model() = default;
 
-	void render([[maybe_unused]] const cm_renderinfo& info) override {};
+	void render([[maybe_unused]] const cm_renderinfo& info) const override {};
 	void render2d() override {};
 
-	int map_export(std::ofstream& o, int index) override;
+	int map_export(std::ofstream& o, int index) const override;
 
 
 	const char* name = {};
@@ -223,6 +230,95 @@ struct cm_model : public cm_geometry
 
 
 	cm_geomtype type() const noexcept override { return cm_geomtype::model; }
+
+};
+
+using GeometryPtr_t = std::unique_ptr<cm_geometry>;
+using LevelGeometry_t = std::vector<GeometryPtr_t>;
+
+using GentityPtr_t = std::unique_ptr<CGameEntity>;
+using LevelGentities_t = std::vector<std::unique_ptr<CGameEntity>>;
+
+class CClipMap
+{
+	NONCOPYABLE(CClipMap);
+
+public:
+
+	friend void CM_LoadBrushWindingsToClipMap(const cbrush_t* brush);
+	friend std::unique_ptr<cm_geometry> CM_GetBrushPoints(const cbrush_t* brush, const fvec3& poly_col);
+	friend void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2);
+
+	static void Insert(GeometryPtr_t& geom);
+	static void Insert(GeometryPtr_t&& geom);
+	static void ClearAllOfType(const cm_geomtype t);
+	static auto GetAllOfType(const cm_geomtype t);
+
+	static void ClearAllOfTypeThreadSafe(const cm_geomtype t) { std::unique_lock<std::mutex> lock(mtx); ClearAllOfType(t); }
+
+	//NOT thread safe
+	static void RemoveBrushCollisionsBasedOnVolume(const float volume);
+
+	//NOT thread safe
+	static void RestoreBrushCollisions();
+
+	static auto begin() { return m_pLevelGeometry.begin(); }
+	static auto end() { return m_pLevelGeometry.end(); }
+	[[nodiscard]] static size_t Size() { return m_pLevelGeometry.size(); }
+	static void Clear() { CClipMap::RestoreBrushCollisions(); m_pLevelGeometry.clear(); m_pWipGeometry.reset(); }
+	static void ClearThreadSafe() { std::unique_lock<std::mutex> lock(mtx); Clear(); }
+
+	[[nodiscard]] inline static auto& GetLock() { return mtx; }
+
+	template<typename Func>
+	static void ForEach(Func func) {
+
+		for (auto& geo : m_pLevelGeometry)
+			func(geo);
+
+	}
+
+private:
+	static std::unique_ptr<cm_geometry> m_pWipGeometry;
+	static fvec3 m_vecWipGeometryColor;
+	static LevelGeometry_t m_pLevelGeometry;
+
+	static std::mutex mtx;
+};
+
+class CGentities
+{
+public:
+
+	static void CM_LoadAllEntitiesToClipMapWithFilters(const std::unordered_set<std::string>& filters);
+
+	static void Insert(GentityPtr_t& geom);
+	static void Insert(GentityPtr_t&& geom);
+
+	static auto begin();
+	static auto end();
+	[[nodiscard]] static size_t Size();
+	static void Clear();
+	static void ClearThreadSafe();
+
+	static void Repopulate() { m_bRePopulate = true; }
+	[[nodiscard]] static auto TimeToRepopulate() { return m_bRePopulate; }
+	static void Depopulate() { m_bRePopulate = false; }
+
+	[[nodiscard]] inline static auto& GetLock() { return mtx; }
+
+	template<typename Func>
+	static void ForEach(Func func) {
+
+		for (auto& geo : m_pLevelGentities)
+			func(geo);
+
+	}
+
+private:
+	static LevelGentities_t m_pLevelGentities;
+	static std::mutex mtx;
+	static bool m_bRePopulate;
 
 };
 

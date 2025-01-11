@@ -13,9 +13,9 @@ int BoxOnPlaneSide(const fvec3& emins, const fvec3& emaxs, struct cplane_s* p);
 void PlaneFromPointsASM(float* plane, float* v0, float* v1, float* v2);
 
 
-void BuildFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumPlanes);
+void BuildFrustumPlanes(cplane_s* frustumPlanes);
 void SetPlaneSignbits(cplane_s* out);
-void CreateFrustumPlanes(const struct GfxViewParms* viewParms, cplane_s* frustumPlanes);
+void CreateFrustumPlanes(cplane_s* frustumPlanes);
 fvec3 SetSurfaceBrightness(const fvec3& color, const fvec3& normal, const fvec3& lightDirection);
 
 void AngleVectors(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
@@ -37,3 +37,6 @@ float AngleNormalize180(float angle);
 float AngleNormalize90(float angle);
 
 float AngleDelta(float angle1, float angle2);
+
+bool BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frustumPlanes, int numPlanes);
+

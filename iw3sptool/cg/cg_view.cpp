@@ -1,12 +1,15 @@
 #include "cg_trace.hpp"
 #include "cg_view.hpp"
+#include "cg_local.hpp"
+#include "cg_offsets.hpp"
+#include "cm/cm_renderer.hpp"
 #include "dvar/dvar.hpp"
 #include "utils/hook.hpp"
-#include <bg/bg_pmove.hpp>
-#include <cm/cm_brush.hpp>
-#include <com/com_vector.hpp>
-#include <global_macros.hpp>
-#include <r/rb_endscene.hpp>
+#include "bg/bg_pmove.hpp"
+#include "cm/cm_brush.hpp"
+#include "com/com_vector.hpp"
+#include "global_macros.hpp"
+#include "r/rb_endscene.hpp"
 
 void CG_OffsetFirstPersonView(cg_s* _cgs)
 {
@@ -111,7 +114,7 @@ void RB_RenderPlayerHitboxes()
 
 	auto v = CM_CreateCube(o, fvec3(28.f,28.f, CG_GetPlayerHitboxHeight(&cgs->predictedPlayerState)));
 
-	RB_DrawCollisionEdges(v.size(), (float(*)[3])v.data(), vec4_t{1,1,0,0.7f}, true);
+	CM_DrawCollisionEdges(v, vec4_t{1,1,0,0.7f}, true);
 
 }
 

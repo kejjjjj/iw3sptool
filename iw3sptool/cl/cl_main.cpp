@@ -7,17 +7,9 @@
 
 void CL_Disconnect()
 {
-	__brush::rb_requesting_to_stop_rendering = true;
 
-	if (clientUI->connectionState != CA_DISCONNECTED) {
-	}
-
-	CClipMap::clear();
-	gameEntities::getInstance().clear(true);
-	entity_globals::ent_fields.clear();
-
-	__brush::rb_requesting_to_stop_rendering = false;
-
+	CClipMap::ClearThreadSafe();
+	CGentities::ClearThreadSafe();
 
 	return ((void(*)())0x444F10)();
 
@@ -25,9 +17,8 @@ void CL_Disconnect()
 void Map_Restart_f()
 {
 
-	CClipMap::clear();
-	gameEntities::getInstance().clear(true);
-	entity_globals::ent_fields.clear();
+	CClipMap::ClearThreadSafe();
+	CGentities::ClearThreadSafe();
 
 	return engine_call<void>(0x005C4E30, 1);
 
@@ -35,9 +26,8 @@ void Map_Restart_f()
 void Fast_Restart_f()
 {
 
-	CClipMap::clear();
-	gameEntities::getInstance().clear(true);
-	entity_globals::ent_fields.clear();
+	CClipMap::ClearThreadSafe();
+	CGentities::ClearThreadSafe();
 
 	return engine_call<void>(0x005C4E30, 0);
 

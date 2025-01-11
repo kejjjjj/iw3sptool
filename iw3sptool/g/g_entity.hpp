@@ -6,8 +6,8 @@
 
 
 void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string>& filters);
-void G_ParseEntityFieldsASM();
-void G_ParseEntityFields(gentity_s* gent, int);
+
+[[nodiscard]] bool G_RepopulateEntities();
 
 void G_FreeEntity(gentity_s* gent);
 void G_FreeEntityASM();

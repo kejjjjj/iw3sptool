@@ -47,9 +47,11 @@ void CG_CreateHooks()
 
 	hooktable::preserver<void>(HOOK_PREFIX("PM_SprintFixASM"), 0x5B7B1E, PM_SprintFixASM);
 
-	hooktable::preserver<void>(HOOK_PREFIX("G_ParseEntityFieldsASM"), 0x4E93C0, G_ParseEntityFieldsASM);
 	hooktable::preserver<void>(HOOK_PREFIX("CG_UpdateViewWeaponAnim"), 0x433BB0, CG_UpdateViewWeaponAnim);
 	hooktable::preserver<void>(HOOK_PREFIX("CL_Disconnect"), 0x444F80, CL_Disconnect);
+
+	hooktable::preserver<void>(HOOK_PREFIX("R_AddWorldSurfacesPortalWalk"), 0x5ECBDC, R_AddWorldSurfacesPortalWalk);
+
 
 	//hooktable::preserver<void, usercmd_s*>(HOOK_PREFIX("CL_FinishMove"), 0x440040, CL_FinishMove);
 

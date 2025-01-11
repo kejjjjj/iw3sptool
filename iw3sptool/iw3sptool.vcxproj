@@ -164,6 +164,7 @@
     <ClInclude Include="cm\cm_entity.hpp" />
     <ClInclude Include="cm\cm_export.hpp" />
     <ClInclude Include="cm\cm_model.hpp" />
+    <ClInclude Include="cm\cm_renderer.hpp" />
     <ClInclude Include="cm\cm_terrain.hpp" />
     <ClInclude Include="cm\cm_typedefs.hpp" />
     <ClInclude Include="com\com_channel.hpp" />
@@ -174,6 +175,7 @@
     <ClInclude Include="fs_utilities.hpp" />
     <ClInclude Include="global_macros.hpp" />
     <ClInclude Include="g\g_entity.hpp" />
+    <ClInclude Include="g\g_spawn.hpp" />
     <ClInclude Include="mh\buffer.h" />
     <ClInclude Include="mh\hde\hde32.h" />
     <ClInclude Include="mh\hde\hde64.h" />
@@ -206,6 +208,7 @@
     <ClCompile Include="cm\cm_entity.cpp" />
     <ClCompile Include="cm\cm_export.cpp" />
     <ClCompile Include="cm\cm_model.cpp" />
+    <ClCompile Include="cm\cm_renderer.cpp" />
     <ClCompile Include="cm\cm_terrain.cpp" />
     <ClCompile Include="cm\cm_typedefs.cpp" />
     <ClCompile Include="com\com_channel.cpp" />
@@ -215,6 +218,7 @@
     <ClCompile Include="errors.cpp" />
     <ClCompile Include="fs_utilities.cpp" />
     <ClCompile Include="g\g_entity.cpp" />
+    <ClCompile Include="g\g_spawn.cpp" />
     <ClCompile Include="mh\buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>

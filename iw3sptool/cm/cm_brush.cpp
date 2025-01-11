@@ -1,40 +1,33 @@
+#include "cg/cg_offsets.hpp"
 #include "cm_brush.hpp"
-#include "com/com_channel.hpp"
-#include <com/com_vector.hpp>
-#include <dvar/dvar.hpp>
-#include <cg/cg_offsets.hpp>
-#include <string>
-#include "cm_terrain.hpp"
-#include "global_macros.hpp"
-#include <Windows.h>
-#include <r/rb_endscene.hpp>
 #include "cm_entity.hpp"
+#include "cm_terrain.hpp"
+#include "com/com_channel.hpp"
+#include "com/com_vector.hpp"
+#include "dvar/dvar.hpp"
+#include "global_macros.hpp"
+#include "r/rb_endscene.hpp"
+
+#include <ranges>
+#include <string>
 
 #define NUM_SIDES 128
 
 SimplePlaneIntersection pts[1024];
 SimplePlaneIntersection* pts_results[1024];
 
-void Cmd_CollisionFilter_f()
+void CM_ShowCollisionFilter()
 {
-	int num_args = cmd_args->argc[cmd_args->nesting];
-
-	__brush::rb_requesting_to_stop_rendering = true;
-
+	const auto num_args = cmd_args->argc[cmd_args->nesting];
 
 	if (num_args == 1) {
-		auto& g = CClipMap::get();
-
-
-		if (g.empty())
-			Com_Printf("there is no geometry to be cleared.. did you intend to use cm_showCollisionFilter <material>?\n");
-		CClipMap::clear();
-
-		__brush::rb_requesting_to_stop_rendering = false;
-
+		if (CClipMap::Size() == 0)
+			Com_Printf(CON_CHANNEL_CONSOLEONLY, "there is no geometry to be cleared.. did you intend to use cm_showCollisionFilter <material>?\n");
+		CClipMap::ClearThreadSafe();
 		return;
 	}
-	CClipMap::clear();
+
+	CClipMap::ClearThreadSafe();
 
 
 	std::unordered_set<std::string> filters;
@@ -42,13 +35,26 @@ void Cmd_CollisionFilter_f()
 		filters.insert(*(cmd_args->argv[cmd_args->nesting] + i));
 	}
 
-	for (unsigned short i = 0; i < cm->numBrushes; i++) {
+	CM_LoadAllBrushWindingsToClipMapWithFilter(filters);
+	CM_LoadAllTerrainToClipMapWithFilters(filters);
+}
 
-		auto materials = CM_GetBrushMaterials(&cm->brushes[i]);
+void CM_LoadAllBrushWindingsToClipMapWithFilter(const std::unordered_set<std::string>& filters)
+{
+	std::unique_lock<std::mutex> lock(CClipMap::GetLock());
+
+	CClipMap::ClearAllOfType(cm_geomtype::brush);
+
+	if (filters.empty())
+		return;
+
+	for (const auto i : std::views::iota(0u, cm->numBrushes)) {
+
+		const auto materials = CM_GetBrushMaterials(&cm->brushes[i]);
 
 		bool yes = {};
 
-		for (auto& material : materials) {
+		for (const auto& material : materials) {
 			if (CM_IsMatchingFilter(filters, material.c_str())) {
 				yes = true;
 				break;
@@ -58,40 +64,42 @@ void Cmd_CollisionFilter_f()
 		if (!yes)
 			continue;
 
-		CM_GetBrushWindings(&cm->brushes[i]);
-
+		CM_LoadBrushWindingsToClipMap(&cm->brushes[i]);
 	}
-
-	CM_DiscoverTerrain(filters);
-
-	__brush::rb_requesting_to_stop_rendering = false;
 
 }
 
-std::unique_ptr<cm_geometry> CClipMap::wip_geom;
-std::vector<std::unique_ptr<cm_geometry>> CClipMap::geometry;
-fvec3 CClipMap::wip_color = {};
+void CM_LoadBrushWindingsToClipMap(const cbrush_t* brush)
+{
+	if (!brush)
+		return;
 
-std::unique_ptr<cm_geometry> CM_GetBrushPoints(cbrush_t* brush, const fvec3& poly_col)
+	CClipMap::m_pWipGeometry = CM_GetBrushPoints(brush, { 0.f, 1.f, 0.f });
+	CClipMap::Insert(CClipMap::m_pWipGeometry);
+
+}
+
+std::unique_ptr<cm_geometry> CM_GetBrushPoints(const cbrush_t* brush, const fvec3& poly_col)
 {
 	if (!brush)
 		return nullptr;
 
 	float outPlanes[NUM_SIDES][4]{};
-	int planeCount = BrushToPlanes(brush, outPlanes);
-	int intersections = GetPlaneIntersections((const float**)outPlanes, planeCount, pts);
+	const auto planeCount = BrushToPlanes(brush, outPlanes);
+	const auto intersections = GetPlaneIntersections((const float**)outPlanes, planeCount, pts);
 	adjacencyWinding_t windings[NUM_SIDES]{};
 
-	int intersection = 0;
-	int num_verts = 0;
+	auto intersection = 0;
+	auto num_verts = 0;
 
-	CClipMap::wip_geom = std::make_unique<cm_brush>();
-	CClipMap::wip_color = poly_col;
+	CClipMap::m_pWipGeometry = std::make_unique<cm_brush>();
+	CClipMap::m_vecWipGeometryColor = poly_col;
 
-	auto c_brush = dynamic_cast<cm_brush*>(CClipMap::wip_geom.get());
+	auto c_brush = dynamic_cast<cm_brush*>(CClipMap::m_pWipGeometry.get());
 
-	c_brush->brush = brush;
+	c_brush->brush = const_cast<cbrush_t*>(brush);
 	c_brush->origin = fvec3(brush->mins) + ((fvec3(brush->maxs) - fvec3(brush->mins)) / 2);
+	c_brush->originalContents = brush->contents;
 
 	do {
 		auto w = BuildBrushdAdjacencyWindingForSide(intersections, pts, outPlanes[intersection], intersection, &windings[intersection]);
@@ -104,17 +112,9 @@ std::unique_ptr<cm_geometry> CM_GetBrushPoints(cbrush_t* brush, const fvec3& pol
 	c_brush->num_verts = num_verts;
 	c_brush->create_corners();
 
-	return std::move(CClipMap::wip_geom);
+	return std::move(CClipMap::m_pWipGeometry);
 }
-void CM_GetBrushWindings(cbrush_t* brush)
-{
-	if (!brush)
-		return;
 
-	CClipMap::wip_geom = CM_GetBrushPoints(brush, { 0.f, 1.f, 0.f });
-	CClipMap::InsertGeometry(CClipMap::wip_geom);
-
-}
 void CM_BuildAxialPlanes(float(*planes)[6][4], const cbrush_t* brush)
 {
 
@@ -250,9 +250,9 @@ adjacencyWinding_t* BuildBrushdAdjacencyWindingForSide(int ptCount, SimplePlaneI
 
 	return optionalOutWinding;
 }
-static void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2)
+void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2)
 {
-	auto brush = dynamic_cast<cm_brush*>(CClipMap::wip_geom.get());
+	auto brush = dynamic_cast<cm_brush*>(CClipMap::m_pWipGeometry.get());
 	cm_triangle tri;
 	std::vector<fvec3> winding_points;
 
@@ -273,7 +273,7 @@ static void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3
 		winding_points.push_back({ &points[winding * 3] });
 	}
 
-	brush->windings.push_back(cm_winding{ winding_points, normal, CClipMap::wip_color });
+	brush->windings.push_back(cm_winding{ winding_points, normal, CClipMap::m_vecWipGeometryColor });
 }
 __declspec(naked) void __brush::__asm_adjacency_winding()
 {
@@ -309,20 +309,13 @@ __declspec(naked) void __brush::__asm_adjacency_winding()
 }
 
 
-void RB_ShowCollision(GfxViewParms* viewParms)
+void RB_ShowCollision([[maybe_unused]]GfxViewParms* viewParms)
 {
-	decltype(auto) ents = gameEntities::getInstance();
-
-	if (__brush::rb_requesting_to_stop_rendering) {
+	if (CClipMap::Size() == 0)
 		return;
-	}
 
 	cplane_s frustum_planes[6];
-	CreateFrustumPlanes(viewParms, frustum_planes);
-
-	auto& geo = CClipMap::get();
-	if (geo.empty() && ents.empty())
-		return;
+	CreateFrustumPlanes(frustum_planes);
 
 	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 
@@ -342,31 +335,28 @@ void RB_ShowCollision(GfxViewParms* viewParms)
 	const bool brush_allowed = collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH;
 	const bool terrain_allowed = collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH;
 
-
-	for (auto& geom : geo) {
-
+	std::unique_lock<std::mutex> lock(CClipMap::GetLock());
+	CClipMap::ForEach([&](const GeometryPtr_t& geom) {
 		if (geom->type() == cm_geomtype::brush && brush_allowed || geom->type() == cm_geomtype::terrain && terrain_allowed)
 			geom->render(render_info);
-	}
+	});
 
-	auto cm_radiation_radius_scale = Dvar_FindMalleableVar("cm_radiation_radius_scale");
+	//auto cm_radiation_radius_scale = Dvar_FindMalleableVar("cm_radiation_radius_scale");
 	
-	if (cm_radiation_radius_scale->modified) {
+	//if (cm_radiation_radius_scale->modified) {
 
-		for (auto& ent : ents) {
-			if (ent->get_type() == gentity_type::RADIUS) {
-				dynamic_cast<radiusEntity*>(ent.get())->refresh_geometry();
-			}
-		}
+	//	for (auto& ent : ents) {
+	//		if (ent->get_type() == gentity_type::RADIUS) {
+	//			dynamic_cast<radiusEntity*>(ent.get())->refresh_geometry();
+	//		}
+	//	}
 
-		cm_radiation_radius_scale->modified = false;
-	}
+	//	cm_radiation_radius_scale->modified = false;
+	//}
 
-	for (auto& ent : ents) {
-
-
-		ent->render(render_info);
-	}
+	//for (auto& ent : ents) {
+	//	ent->render(render_info);
+	//}
 
 }
 bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int numPlanes)
@@ -523,39 +513,6 @@ std::vector<fvec3> CM_CreateSphere(const fvec3& ref_org, const float radius, con
 	}
 
 	return points;
-}
-void RB_DrawCollisionPoly(int numPoints, float(*points)[3], const float* colorFloat, bool depthtest)
-{
-	std::vector<fvec3> _pts;
-	for (int i = 0; i < numPoints; i++)
-		_pts.push_back(points[i]);
-
-	RB_DrawPolyInteriors(numPoints, _pts, colorFloat, true, depthtest);
-
-}
-
-GfxPointVertex verts[2075];
-
-void RB_DrawCollisionEdges(int numPoints, float(*points)[3], const float* colorFloat, bool depthtest)
-{
-	uint8_t c[4]{};
-
-	R_ConvertColorToBytes(colorFloat, c);
-
-	int vert_count = 0;
-	int vert_index_prev = numPoints - 1;
-
-
-	for (int i = 0; i < numPoints; i++) {
-		vert_count = RB_AddDebugLine(verts, points[i], (float*)points[vert_index_prev], c, vert_count);
-
-		vert_index_prev = i;
-	}
-
-	RB_DrawLines3D(vert_count/2, 1, verts, depthtest);
-
-	//delete[] verts;
-
 }
 
 bool CM_IsMatchingFilter(const std::unordered_set<std::string>& filters, char* material)

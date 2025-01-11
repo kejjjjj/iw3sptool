@@ -46,7 +46,7 @@ void CG_Init()
     
     //hook::write_addr(0x433BB0, "\xC3", 1);
 
-    Cmd_AddCommand("cm_showCollisionFilter", Cmd_CollisionFilter_f);
+    Cmd_AddCommand("cm_showCollisionFilter", CM_ShowCollisionFilter);
     Cmd_AddCommand("cm_showEntities", Cmd_ShowEntities_f);
     Cmd_AddCommand("cm_mapexport", CM_MapExport);
 

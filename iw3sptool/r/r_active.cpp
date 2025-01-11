@@ -4,6 +4,8 @@
 #include <cm/cm_entity.hpp>
 #include "utils/hook.hpp"
 #include <cl/cl_keymove.hpp>
+#include <com/com_channel.hpp>
+#include <iostream>
 
 void CG_DrawActive()
 {
@@ -43,8 +45,9 @@ void CG_DrawActive()
 	}
 	if (cm_entityInfo->current.integer) {
 		
-		for (auto& a : gameEntities::getInstance())
-			a->render2d(cm_showCollisionDist->current.value, static_cast<entity_info_type>(cm_entityInfo->current.integer));
+		CGentities::ForEach([](GentityPtr_t& ptr) {
+			ptr->CG_Render2D(cm_showCollisionDist->current.value, static_cast<entity_info_type>(cm_entityInfo->current.integer)); 
+		});
 
 	}
 
@@ -63,4 +66,68 @@ void CG_DrawActive()
 
 	return hooktable::find<void>(HOOK_PREFIX(__func__))->call();
 
+}
+
+static void __Test();
+void R_AddDebugLine(const float* start, const float* end, const float* color);
+void R_AddDebugBox(const float* mins, const float* maxs, const float* color);
+
+__declspec(naked) void R_AddWorldSurfacesPortalWalk()
+{
+	__asm
+	{
+		call __Test;
+		add esp, 0Ch;
+		pop edi;
+		pop esi;
+		pop ebp;
+		pop ebx;
+		pop ecx;
+		retn;
+	}
+}
+
+void __Test()
+{
+
+	static vec3_t mins = { 0, 0, 0 };
+	static vec3_t maxs = { 10, 10, 10 };
+	static vec4_t c = { 0, 1, 1, 1 };
+
+	R_AddDebugLine(mins, maxs, c);
+	R_AddDebugBox(mins, maxs, c);
+
+
+}
+
+void R_AddDebugLine(const float* start, const float* end, const float* color)
+{
+	constexpr auto func = 0x5EE720;
+	__asm
+	{
+		mov esi, ds:1621DECh;
+		add esi, 11E71Ch;
+		push color;
+		push end;
+		push start;
+		call func;
+		add esp, 12;
+	}
+}
+void R_AddDebugBox(const float* mins, const float* maxs, const float* color)
+{
+	//DebugGlobals* globals = (DebugGlobals*)(0x1621DEC + 1173276);
+
+	constexpr auto func = 0x5EE7D0;
+	__asm
+	{
+		mov ecx, ds:1621DECh;
+		add ecx, 11E71Ch;
+		push color;
+		push ecx;
+		mov edx, maxs;
+		mov eax, mins;
+		call func;
+		add esp, 8;
+	}
 }

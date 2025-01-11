@@ -13,184 +13,71 @@
 using namespace std::chrono_literals;
 
 std::unordered_set<std::string> ent_filter;
-bool monitoring_entities = false;
-bool this_entity_is_relevant = false;
-bool thread_exists = false;
+volatile bool this_entity_is_relevant = false;
+volatile DWORD time_since_loadgame{};
 
-std::unordered_map<int, entity_fields> entity_globals::ent_fields = {};
-
-
-void update_entities_thread()
+bool G_RepopulateEntities()
 {
-	decltype(auto) ents = gameEntities::getInstance();
-
-	if (monitoring_entities == false) {
-		ents.it_is_ok_to_load_entities = true;
-		ents.time_since_loadgame = 0;
-		ents.clear();
-
-		return;
+	//let a few frames pass
+	if (Sys_MilliSeconds() < time_since_loadgame + 50) {
+		return false;
 	}
-	ents.clear();
 
-	while (Sys_MilliSeconds() < ents.time_since_loadgame + 150) {
-		std::this_thread::sleep_for(10ms);
-	}
-	ents.it_is_ok_to_load_entities = true;
-	ents.time_since_loadgame = 0;
+	time_since_loadgame = 0;
+	CGentities::CM_LoadAllEntitiesToClipMapWithFilters(ent_filter);
 
-
-	G_DiscoverGentities(level, ent_filter);
-
+	return true;
 }
-
 void Cmd_ShowEntities_f()
 {
 
 
-	decltype(auto) ents = gameEntities::getInstance();
-
 	int num_args = cmd_args->argc[cmd_args->nesting];
 
 	if (num_args == 1) {
-		monitoring_entities = false;
-		if (ents.empty()) {
+		if (CGentities::Size() == 0) {
 			return Com_Printf(CON_CHANNEL_CONSOLEONLY, "there are no entities to be cleared.. did you intend to use cm_showEntities <classname>?\n");
 		}
 
 		if (Dvar_FindMalleableVar("developer")->current.enabled)
-			Com_Printf("clearing %i entities from the render queue\n", ents.size());
+			Com_Printf("clearing %i entities from the render queue\n", CGentities::Size());
 
-		ents.clear();
+		CGentities::ClearThreadSafe();
 		return;
 	}
+
 	std::unordered_set<std::string> filters;
 	for (int i = 1; i < num_args; i++) {
 		filters.insert(*(cmd_args->argv[cmd_args->nesting] + i));
 	}
 
-	monitoring_entities = true;
 	ent_filter = filters;
+	CGentities::CM_LoadAllEntitiesToClipMapWithFilters(filters);
 
-	G_DiscoverGentities(level, filters);
-
-	Com_Printf(CON_CHANNEL_CONSOLEONLY, "adding %i entities to the render queue\n", ents.size());
+	Com_Printf(CON_CHANNEL_CONSOLEONLY, "adding %i entities to the render queue\n", CGentities::Size());
 
 }
 
 
 void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string>& filters)
 {
-	decltype(auto) ents = gameEntities::getInstance();
 
-	if (ents.it_is_ok_to_load_entities == false) {
+	CGentities::ClearThreadSafe();
 
-		return;
-	}
-
-	thread_exists = false;
-
-	__brush::rb_requesting_to_stop_rendering = true;
-
-
-	ents.clear();
-	for (int i = 0; i < l->num_entities; i++) {
+	for (auto i = 0; i < l->num_entities; i++) {
 
 		if (CM_IsMatchingFilter(filters, Scr_GetString(l->gentities[i].classname)) == false)
 			continue;
 
-		ents.push_back(&l->gentities[i]);
-		++ents.spawned_entities;
+		CGentities::Insert(CGameEntity::CreateEntity(&l->gentities[i]));
 	}
-
-
-	//std::cout << "a total of " << ents.size() << " entities\n";
-
-	__brush::rb_requesting_to_stop_rendering = false;
-
-}
-__declspec(naked) void G_ParseEntityFieldsASM()
-{
-	static constexpr DWORD r = 0x4E9403;
-	__asm
-	{
-		push ecx;
-		//push ebx;
-
-		//mov ebx, [esp + 0x8 + 4];
-
-		push 0;
-		push esi;
-		call G_ParseEntityFields;
-		add esp, 8;
-
-		pop ecx;
-		retn;
-	}
-}
-void G_ParseEntityFields(gentity_s* gent, int a2)
-{
-	entity_fields f;
-
-	constexpr DWORD fnc = 0x4E9180;
-	for (int i = 0; i < level->spawnVar.numSpawnVars; i++)
-	{
-
-		auto key = level->spawnVar.spawnVars[i][0];
-		auto value = level->spawnVar.spawnVars[i][1];
-
-		__asm
-		{
-			push a2;
-			push gent;
-			mov ecx, key;
-			mov eax, value;
-			call fnc;
-			add esp, 8;
-
-		}
-
-		if (key && value)
-			f.key_value.push_back({ key, value });
-
-	}
-
-	if (f.key_value.size())
-		entity_globals::ent_fields.insert({ gent->s.number, std::move(f) });
-
-	gent->s.lerp.pos.trBase[0] = gent->r.currentOrigin[0];
-	gent->s.lerp.pos.trBase[1] = gent->r.currentOrigin[1];
-	gent->s.lerp.pos.trBase[2] = gent->r.currentOrigin[2];
-	gent->s.lerp.pos.trType = TR_STATIONARY;
-	gent->s.lerp.pos.trTime = 0;
-	gent->s.lerp.pos.trDuration = 0;
-	gent->s.lerp.pos.trDelta[0] = 0.0;
-	gent->s.lerp.pos.trDelta[1] = 0.0;
-	gent->s.lerp.pos.trDelta[2] = 0.0;
-	gent->r.currentOrigin[0] = gent->r.currentOrigin[0];
-	gent->r.currentOrigin[1] = gent->r.currentOrigin[1];
-	gent->r.currentOrigin[2] = gent->r.currentOrigin[2];
-	gent->s.lerp.apos.trBase[0] = gent->r.currentAngles[0];
-	gent->s.lerp.apos.trBase[1] = gent->r.currentAngles[1];
-	gent->s.lerp.apos.trBase[2] = gent->r.currentAngles[2];
-	gent->s.lerp.apos.trType = TR_STATIONARY;
-	gent->s.lerp.apos.trTime = 0;
-	gent->s.lerp.apos.trDuration = 0;
-	gent->s.lerp.apos.trDelta[0] = 0.0;
-	gent->s.lerp.apos.trDelta[1] = 0.0;
-	gent->s.lerp.apos.trDelta[2] = 0.0;
-	gent->r.currentAngles[0] = gent->r.currentAngles[0];
-	gent->r.currentAngles[1] = gent->r.currentAngles[1];
-	gent->r.currentAngles[2] = gent->r.currentAngles[2];
 
 }
 void G_FreeEntity(gentity_s* gent)
 {
-	//std::cout << "freeing entity\n";
-	//find_hook(hookEnums_e::HOOK_G_FREE_ENTITY).cast_call<void(*)(gentity_s*)>(ent);
 
-	if (monitoring_entities && gent) {
-		this_entity_is_relevant = gameEntity::is_supported_entity(gent) && CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname));
+	if (CGentities::Size() && gent) {
+		this_entity_is_relevant = CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname));
 	}
 	return;
 }
@@ -200,7 +87,7 @@ void G_FreeEntity2()
 		if (Dvar_FindMalleableVar("developer")->current.enabled)
 			Com_Printf("removing an entity from the render queue\n");
 
-		G_DiscoverGentities(level, ent_filter);
+		CGentities::CM_LoadAllEntitiesToClipMapWithFilters(ent_filter);
 		this_entity_is_relevant = false;
 	}
 	return;
@@ -239,17 +126,16 @@ __declspec(naked) void G_FreeEntityASM2()
 }
 void G_Spawn(gentity_s* gent)
 {
-	//std::cout << "total spawned entities: " << ++spawned_entities << '\n';
-	if (monitoring_entities && gent) {
-		if (CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname)) && gameEntity::is_supported_entity(gent)) {
-			G_DiscoverGentities(level, ent_filter);
+	if (CGentities::Size() && gent) {
+		if (CM_IsMatchingFilter(ent_filter, Scr_GetString(gent->classname))) {
+
+			CGentities::CM_LoadAllEntitiesToClipMapWithFilters(ent_filter);
+
 			if(Dvar_FindMalleableVar("developer")->current.enabled)
 				Com_Printf("adding a new entity to the render queue\n");
 		}
 
 	}
-
-
 
 	return;
 
@@ -281,22 +167,15 @@ __declspec(naked) void G_SpawnASM2()
 		retn;
 	}
 }
-void G_LoadGameAAA()
-{
-	gameEntities::getInstance().clear();
-	gameEntities::getInstance().time_since_loadgame = Sys_MilliSeconds();
 
-
-
-}
 void G_LoadGame_f()
 {
 	hooktable::find<void>(HOOK_PREFIX(__func__))->call();
-	gameEntities::getInstance().clear();
-	gameEntities::getInstance().time_since_loadgame = Sys_MilliSeconds();
-	gameEntities::getInstance().it_is_ok_to_load_entities = false;
-	std::thread(update_entities_thread).detach();
 
-	return;
+	time_since_loadgame = Sys_MilliSeconds();
 
+	if(CGentities::Size())
+		CGentities::Repopulate();
+
+	CGentities::ClearThreadSafe();
 }

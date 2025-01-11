@@ -1,17 +1,17 @@
 #pragma once
 
+#include "cm_typedefs.hpp"
+
 #include <unordered_map>
 #include <string>
-#include "cg/cg_local.hpp"
-#include "cm_typedefs.hpp"
-#include <cmd.hpp>
+#include <vector>
 
-enum class gentity_type
+enum class EGentityType
 {
-	BRUSHMODEL,
-	SPAWNER,
-	RADIUS,
-	OTHER
+	gt_brushmodel,
+	gt_spawner,
+	gt_radius,
+	gt_other,
 };
 
 enum class entity_info_type
@@ -21,160 +21,132 @@ enum class entity_info_type
 	eit_verbose
 };
 
-struct entity_fields
-{
-	std::vector<std::pair<std::string, std::string>> key_value;
-};
-
-
-struct entity_globals
-{
-	static std::unordered_map<int, entity_fields> ent_fields;
-};
-
 void Cmd_ShowEntities_f();
 
+struct gentity_s;
 
-class gameEntity
+class CGameEntity
 {
 public:
 
-	gameEntity(gentity_s* gent) : g(gent) 
-	{
-		if (!valid_entity())
-			return;
+	CGameEntity(gentity_s* const g);
+	virtual ~CGameEntity();
 
-		origin = (fvec3*)g->r.currentOrigin;
-		orientation = (fvec3*)g->r.currentAngles;
+	[[nodiscard]] virtual constexpr EGentityType Type() const { return EGentityType::gt_other; }
 
-		auto _fields = entity_globals::ent_fields.find(g->s.number);
+	[[nodiscard]] static std::unique_ptr<CGameEntity> CreateEntity(gentity_s* const g);
 
-
-		if (_fields != entity_globals::ent_fields.end()) {
-			fields = &_fields->second;
-		}
-
-	};
-	virtual ~gameEntity() = default;
-	virtual bool valid_entity() const noexcept { return g != nullptr; }
-	bool is_brush_model() const noexcept  { return valid_entity() && g->r.bmodel; }
-
-	fvec3 get_origin() const noexcept { return *origin; }
-	fvec3 get_angles() const noexcept { return *orientation; }
-
-	static std::unique_ptr<gameEntity> createEntity(gentity_s* gent);
-	static bool is_supported_entity(gentity_s* g) { return createEntity(g).get(); }
-	virtual gentity_type get_type() const = 0;
-	virtual void render(const cm_renderinfo& info) = 0;
-	virtual void render2d(float draw_dist, entity_info_type entType);
+	virtual void RB_Render3D(const cm_renderinfo& info) const;
+	virtual void CG_Render2D(float drawDist, entity_info_type entType) const;
 
 protected:
-	gentity_s* g = 0;
-	fvec3* origin = 0;
-	fvec3* orientation = 0;
-	fvec3 oldOrigin;
-	fvec3 oldOrientation;
-	entity_fields* fields = 0;
 
+	[[nodiscard]] bool IsBrushModel() const noexcept;
+
+	fvec3& m_vecOrigin;
+	fvec3& m_vecAngles;
+
+	mutable fvec3 m_vecOldOrigin;
+	mutable fvec3 m_vecOldAngles;
+
+	std::unordered_map<std::string, std::string> m_oEntityFields;
+	gentity_s* const m_pOwner{};
+
+private:
+	void ParseEntityFields();
 };
-class brushModelEntity : public gameEntity
+
+class CBrushModel : public CGameEntity
 {
+	NONCOPYABLE(CBrushModel);
 public:
-	~brushModelEntity() = default;
-	brushModelEntity(gentity_s* gent);
-	void render(const cm_renderinfo& info) override;
-	void render2d(float draw_dist, entity_info_type entType) override;
 
-	constexpr gentity_type get_type() const override
+	CBrushModel(gentity_s* const g);
+	~CBrushModel();
+
+	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_brushmodel; }
+
+	void RB_Render3D(const cm_renderinfo& info) const override;
+
+	struct CIndividualBrushModel
 	{
-		return gentity_type::BRUSHMODEL;
-	}
-	bool valid_entity() const noexcept override { return g != nullptr && brushmodels.empty() == false; }
+		CIndividualBrushModel(gentity_s* const g);
+		virtual ~CIndividualBrushModel();
 
+		virtual void RB_Render3D(const cm_renderinfo& info) const;
 
-	enum class brushmodel_type
-	{
-		BRUSH,
-		TERRAIN
-	};
-
-	struct brushmodelbase
-	{
-		brushmodelbase(gentity_s* gent) : g(gent){}
-		virtual ~brushmodelbase() = default;
-		virtual brushmodel_type get_type() const noexcept = 0;
-		virtual void render(const fvec3& origin, const cm_renderinfo& info) = 0;
-		virtual void on_position_changed(const fvec3& origin, const fvec3& orientation) noexcept(true) = 0;
-		virtual fvec3 get_center() const noexcept(true) = 0;
+		[[nodiscard]] virtual const cm_geometry& GetSource() const noexcept = 0;
+		virtual void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) = 0;
 
 	protected:
-		gentity_s* g;
+		[[nodiscard]] virtual fvec3 GetCenter() const noexcept;
+		gentity_s* const m_pOwner{};
 	};
 
-	struct brushmodel : public brushmodelbase {
-		brushmodel(gentity_s* gent) : brushmodelbase(gent) {};
-		~brushmodel() = default;
-		cbrush_t* linked_brush = 0;
-		cm_brush brush_geometry;
-		cm_brush original_geometry;
-		constexpr brushmodel_type get_type() const noexcept override { return brushmodel_type::BRUSH; }
-		
-		void render(const fvec3& _origin, const cm_renderinfo& info) override;
-		void on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) override;
-		fvec3 get_center() const noexcept(true) override;
-	};
-	struct terrainmodel : public brushmodelbase {
-		cLeaf_t* leaf = {};
-		cm_terrain terrain;
-		cm_terrain original_terrain;
-		terrainmodel(gentity_s* gent) : brushmodelbase(gent) {};
-		~terrainmodel() = default;
-		constexpr brushmodel_type get_type() const noexcept override { return brushmodel_type::TERRAIN; }
+	struct CBrush : public CIndividualBrushModel
+	{
+		CBrush(gentity_s* const g, const cbrush_t* const brush);
+		~CBrush();
 
-		void render([[maybe_unused]] const fvec3& _origin, const cm_renderinfo& info) override;
-		void on_position_changed(const fvec3& _origin, const fvec3& delta_angles) noexcept(true) override;
-		fvec3 get_center() const noexcept(true) override;
+		void RB_Render3D(const cm_renderinfo& info) const override;
+
+
+		void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) override;
+		[[nodiscard]] const cm_geometry& GetSource() const noexcept override;
+
+	private:
+		cm_brush m_oOriginalGeometry;
+		cm_brush m_oCurrentGeometry;
+		const cbrush_t* const m_pSourceBrush = {};
+	};
+
+	struct CTerrain : public CIndividualBrushModel
+	{
+		CTerrain(gentity_s* const g, const cLeaf_t* const leaf, const cm_terrain& terrain);
+		CTerrain(gentity_s* const g, const cLeaf_t* const leaf);
+		~CTerrain();
+
+		void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) override;
+		[[nodiscard]] const cm_geometry& GetSource() const noexcept override;
+
+	private:
+		cm_terrain m_oOriginalGeometry;
+		cm_terrain m_oCurrentGeometry;
+		const cLeaf_t* const m_pSourceLeaf = {};
 	};
 
 private:
-	std::vector<std::unique_ptr<brushmodelbase>> brushmodels;
-
+	std::vector<std::unique_ptr<CIndividualBrushModel>> m_oBrushModels;
 };
 
-class spawnerEntity : public gameEntity
+class CSpawnerEntity : public CGameEntity
 {
 public:
-	spawnerEntity(gentity_s* gent);
-	~spawnerEntity() = default;
+	CSpawnerEntity(gentity_s* gent);
+	~CSpawnerEntity() = default;
 
-	constexpr gentity_type get_type() const override
-	{
-		return gentity_type::SPAWNER;
-	}
+	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_spawner; }
 
-	void render(const cm_renderinfo& info) override;
+	void RB_Render3D(const cm_renderinfo& info) const override;
 
 private:
-	std::vector<fvec3> geometry;
+	mutable std::vector<fvec3> geometry;
 };
 
-class radiusEntity : public gameEntity
+class CRadiusEntity : public CGameEntity
 {
 public:
-	radiusEntity(gentity_s* gent) : gameEntity(gent) {
+	CRadiusEntity(gentity_s* gent) : CGameEntity(gent) {
 
-		refresh_geometry();
+		RefreshGeometry();
 
 	}
-	~radiusEntity() = default;
+	~CRadiusEntity() = default;
 
-	constexpr gentity_type get_type() const override
-	{
-		return gentity_type::RADIUS;
-	}
+	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_radius; }
 
-	void refresh_geometry();
-	void render(const cm_renderinfo& info) override;
+	void RefreshGeometry();
+	void RB_Render3D(const cm_renderinfo& info) const override;
 
 protected:
 
@@ -183,58 +155,4 @@ protected:
 	std::vector<fvec3> xy_cylinder_side;
 };
 
-class gameEntities
-{
-public:
-	gameEntities() = default;
-
-	static gameEntities& getInstance() { static gameEntities g; return g; }
-
-	void push_back(gentity_s* gent) {
-		if (!gent)
-			return;
-
-		auto&& ent = std::move(gameEntity::createEntity(gent));
-
-		if (!ent) {
-			return;
-		}
-		entities.push_back(std::move(ent));
-	}
-	bool empty() const noexcept { return entities.empty(); }
-	void clear(bool clear_filter = false) {
-		if (clear_filter)
-			Cbuf_AddText("cm_showEntities\n");
-
-		freed_entities = 0;
-		spawned_entities = 0;
-		entities.clear();
-		
-	}
-	size_t size() const noexcept { return entities.size(); }
-
-	using iterator = std::vector<std::unique_ptr<gameEntity>>::iterator;
-	using const_iterator = std::vector<std::unique_ptr<gameEntity >>::const_iterator;
-
-	iterator begin() { return entities.begin(); }
-	iterator end() { return entities.end(); }
-	const_iterator begin() const { return entities.begin(); }
-	const_iterator end() const { return entities.end(); }
-
-	std::unique_ptr<gameEntity>& operator[](int idx) {
-		return entities[idx];
-	}
-
-	int freed_entities = 0;
-	int spawned_entities = 0;
-	DWORD time_since_loadgame = 0;
-	bool it_is_ok_to_load_entities = true;
-private:
-
-
-	gameEntities(const gameEntities&) = delete;
-	gameEntities& operator=(const gameEntities&) = delete;
-
-	std::vector<std::unique_ptr<gameEntity>> entities;
-};
 bool G_EntityIsSpawner(const std::string& classname);

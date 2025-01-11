@@ -24,28 +24,25 @@ static void CM_WriteHeader(std::ofstream& f)
 }
 static void CM_WriteAllBrushes(std::ofstream& o)
 {
-	if (CClipMap::size() == 0) {
+	if (CClipMap::Size() == 0) {
 		return FatalError("CClipMap::size() == 0");
 	}
 
 	int brushIndex = 0;
 
-	auto& geo = CClipMap::get();
 	bool entity_start = false;
 
-	for (auto& geom : geo) {
-
-		
+	CClipMap::ForEach([&](const GeometryPtr_t& geom) {
 
 		if (geom->type() == cm_geomtype::model && !entity_start) {
 			entity_start = true;
 			brushIndex = 1;
-			//end brushes
+			//end brushes, start entities
 			o << "}\n";
 		}
 
 		brushIndex = geom->map_export(o, brushIndex);
-	}
+	});
 
 	if (!entity_start) {
 		o << "}\n";

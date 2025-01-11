@@ -64,18 +64,12 @@ void OnDvarsModified()
 
 	if (old_mapname != Dvar_FindMalleableVar("mapname")->current.string) {
 
-		__brush::rb_requesting_to_stop_rendering = true;
 
-		CClipMap::clear();
-		gameEntities::getInstance().clear(true);
-		entity_globals::ent_fields.clear();
-
-		if(gameEntities::getInstance().empty() == false)
-			gameEntities::getInstance().clear(true);
+		CClipMap::ClearThreadSafe();
+		CGentities::ClearThreadSafe();
 
 		old_mapname = Dvar_FindMalleableVar("mapname")->current.string;
 
-		__brush::rb_requesting_to_stop_rendering = false;
 
 	}
 	

@@ -1,13 +1,22 @@
 #pragma once
 
+#include <unordered_set>
+#include <string>
 #include <memory>
-#include "cg/cg_local.hpp"
-#include "cm_typedefs.hpp"
+
+struct CollisionAabbTree;
+struct cLeaf_t;
+
+struct cm_terrain;
+struct cm_geometry;
+struct cm_triangle;
+
+class CClipMap;
+
+void CM_LoadAllTerrainToClipMapWithFilters(const std::unordered_set<std::string>& filters);
+
 
 bool CM_AabbTreeHasCollisions(const CollisionAabbTree* tree);
-
-void CM_DiscoverTerrain(const std::unordered_set<std::string>& filters);
-
-std::unique_ptr<cm_geometry> CM_GetTerrainTriangles(cLeaf_t* leaf, const std::unordered_set<std::string>& filters);
-void CM_AdvanceAabbTree(CollisionAabbTree* aabbTree, cm_terrain* terrain, const std::unordered_set<std::string>& filters, const vec4_t color);
+bool CM_DiscoverTerrain(const std::unordered_set<std::string>& filters);
 bool CM_TriangleInView(const cm_triangle* leaf, struct cplane_s* frustumPlanes, int numPlanes);
+void CM_AdvanceAabbTree(cm_terrain& terrain, const CollisionAabbTree* aabbTree, const std::unordered_set<std::string>& filters, const float* color);
