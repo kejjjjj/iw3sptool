@@ -36,7 +36,10 @@ public:
 
 	[[nodiscard]] static std::unique_ptr<CGameEntity> CreateEntity(gentity_s* const g);
 
-	virtual void RB_Render3D(const cm_renderinfo& info) const;
+	virtual void RB_MakeInteriorsRenderable([[maybe_unused]] const cm_renderinfo& info) const { return; }
+	virtual int RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, int nverts) const { return nverts; }
+
+	//virtual void RB_Render3D(const cm_renderinfo& info) const;
 	virtual void CG_Render2D(float drawDist, entity_info_type entType) const;
 
 protected:
@@ -66,14 +69,16 @@ public:
 
 	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_brushmodel; }
 
-	void RB_Render3D(const cm_renderinfo& info) const override;
+	void RB_MakeInteriorsRenderable([[maybe_unused]] const cm_renderinfo& info) const override;
+	int RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, int nverts) const override;
 
 	struct CIndividualBrushModel
 	{
 		CIndividualBrushModel(gentity_s* const g);
 		virtual ~CIndividualBrushModel();
 
-		virtual void RB_Render3D(const cm_renderinfo& info) const;
+		virtual void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const;
+		virtual int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const;
 
 		[[nodiscard]] virtual const cm_geometry& GetSource() const noexcept = 0;
 		virtual void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) = 0;
@@ -88,8 +93,8 @@ public:
 		CBrush(gentity_s* const g, const cbrush_t* const brush);
 		~CBrush();
 
-		void RB_Render3D(const cm_renderinfo& info) const override;
-
+		void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+		int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
 
 		void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) override;
 		[[nodiscard]] const cm_geometry& GetSource() const noexcept override;
@@ -105,6 +110,9 @@ public:
 		CTerrain(gentity_s* const g, const cLeaf_t* const leaf, const cm_terrain& terrain);
 		CTerrain(gentity_s* const g, const cLeaf_t* const leaf);
 		~CTerrain();
+
+		void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+		int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
 
 		void OnPositionChanged(const fvec3& newOrigin, const fvec3& newAngles) override;
 		[[nodiscard]] const cm_geometry& GetSource() const noexcept override;
@@ -127,7 +135,8 @@ public:
 
 	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_spawner; }
 
-	void RB_Render3D(const cm_renderinfo& info) const override;
+	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
 
 private:
 	mutable std::vector<fvec3> geometry;
@@ -146,8 +155,8 @@ public:
 	[[nodiscard]] constexpr EGentityType Type() const override { return EGentityType::gt_radius; }
 
 	void RefreshGeometry();
-	void RB_Render3D(const cm_renderinfo& info) const override;
-
+	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
 protected:
 
 	std::vector<fvec3> xy_cylinder_top;

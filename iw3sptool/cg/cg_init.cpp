@@ -57,7 +57,7 @@ void CG_Init()
 
     v.integer = 0;
 
-    static const char* poly_types[] = {"Edges", "Polygons"};
+    static const char* poly_types[] = {"Edges", "Polygons", "Both"};
     static const char* showCollisionNames[] = { "Disabled", "Brushes", "Terrain", "Both"};
     static const char* elevator_types[] = { "Disabled", "Enabled", "Include Corners" };
     static const char* entity_info[] = { "Disabled", "Enabled", "Verbose" };
@@ -71,7 +71,7 @@ void CG_Init()
     Dvar_RegisterNew("cm_showCollision", dvar_type::enumeration, dvar_flags::saved, 
         "Select whether to show the terrain, brush or all collision surface groups", v, l);
     
-    l.enumeration.stringCount = 2;
+    l.enumeration.stringCount = 3;
     l.enumeration.strings = poly_types;
 
     Dvar_RegisterNew("cm_showCollisionPolyType", dvar_type::enumeration, dvar_flags::saved, 

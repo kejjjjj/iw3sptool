@@ -186,6 +186,9 @@
     <ClInclude Include="cm\cm_renderer.hpp">
       <Filter>Source Files\cm</Filter>
     </ClInclude>
+    <ClInclude Include="r\r_debug.hpp">
+      <Filter>Source Files\r</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -289,6 +292,9 @@
     </ClCompile>
     <ClCompile Include="cm\cm_renderer.cpp">
       <Filter>Source Files\cm</Filter>
+    </ClCompile>
+    <ClCompile Include="r\r_debug.cpp">
+      <Filter>Source Files\r</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

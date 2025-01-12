@@ -100,6 +100,8 @@ std::unique_ptr<cm_geometry> CM_GetBrushPoints(const cbrush_t* brush, const fvec
 	c_brush->brush = const_cast<cbrush_t*>(brush);
 	c_brush->origin = fvec3(brush->mins) + ((fvec3(brush->maxs) - fvec3(brush->mins)) / 2);
 	c_brush->originalContents = brush->contents;
+	c_brush->mins = brush->mins;
+	c_brush->maxs = brush->maxs;
 
 	do {
 		auto w = BuildBrushdAdjacencyWindingForSide(intersections, pts, outPlanes[intersection], intersection, &windings[intersection]);
@@ -308,57 +310,6 @@ __declspec(naked) void __brush::__asm_adjacency_winding()
 	}
 }
 
-
-void RB_ShowCollision([[maybe_unused]]GfxViewParms* viewParms)
-{
-	if (CClipMap::Size() == 0)
-		return;
-
-	cplane_s frustum_planes[6];
-	CreateFrustumPlanes(frustum_planes);
-
-	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
-
-	cm_renderinfo render_info =
-	{
-		.frustum_planes = frustum_planes,
-		.num_planes = 5,
-		.draw_dist = Dvar_FindMalleableVar("cm_showCollisionDist")->current.value,
-		.depth_test = Dvar_FindMalleableVar("cm_showCollisionDepthTest")->current.enabled,
-		.as_polygons = static_cast<polyType>(Dvar_FindMalleableVar("cm_showCollisionPolyType")->current.integer) == polyType::POLYS,
-		.only_colliding = Dvar_FindMalleableVar("cm_ignoreNonColliding")->current.enabled,
-		.only_bounces = Dvar_FindMalleableVar("cm_onlyBounces")->current.enabled,
-		.only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.integer,
-		.alpha = Dvar_FindMalleableVar("cm_showCollisionPolyAlpha")->current.value
-	};
-
-	const bool brush_allowed = collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH;
-	const bool terrain_allowed = collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH;
-
-	std::unique_lock<std::mutex> lock(CClipMap::GetLock());
-	CClipMap::ForEach([&](const GeometryPtr_t& geom) {
-		if (geom->type() == cm_geomtype::brush && brush_allowed || geom->type() == cm_geomtype::terrain && terrain_allowed)
-			geom->render(render_info);
-	});
-
-	//auto cm_radiation_radius_scale = Dvar_FindMalleableVar("cm_radiation_radius_scale");
-	
-	//if (cm_radiation_radius_scale->modified) {
-
-	//	for (auto& ent : ents) {
-	//		if (ent->get_type() == gentity_type::RADIUS) {
-	//			dynamic_cast<radiusEntity*>(ent.get())->refresh_geometry();
-	//		}
-	//	}
-
-	//	cm_radiation_radius_scale->modified = false;
-	//}
-
-	//for (auto& ent : ents) {
-	//	ent->render(render_info);
-	//}
-
-}
 bool CM_BrushInView(const cbrush_t* brush, struct cplane_s* frustumPlanes, int numPlanes)
 {
 	if (numPlanes <= 0)

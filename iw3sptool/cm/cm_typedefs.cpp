@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <ranges>
 
 LevelGeometry_t CClipMap::m_pLevelGeometry;
 std::unique_ptr<cm_geometry> CClipMap::m_pWipGeometry;
@@ -22,77 +23,18 @@ cm_winding::cm_winding(const std::vector<fvec3>& p, const fvec3& normal, const f
 	is_bounce = normal[2] >= 0.3f && normal[2] <= 0.7f;
 	is_elevator = std::fabs(normal[0]) == 1.f || std::fabs(normal[1]) == 1.f;
 	normals = normal;
-	if (rgp && rgp->world) {
-		fvec3 new_color = SetSurfaceBrightness(col, normal, rgp->world->sunParse.angles);
-		VectorCopy(new_color, color);
-	}
+	VectorCopy(col, color);
+
+	//if (rgp && rgp->world) {
+	//	fvec3 new_color = SetSurfaceBrightness(col, normal, rgp->world->sunParse.angles);
+	//	VectorCopy(new_color, color);
+	//}
 	color[3] = 0.7f;
 
 	mins = get_mins();
 	maxs = get_maxs();
 }
 
-
-void cm_brush::render(const cm_renderinfo& info) const
-{
-	if (info.only_colliding && brush->has_collision() == false)
-		return;
-
-	if (origin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
-		return;
-
-	if (!CM_BrushInView(brush, info.frustum_planes, info.num_planes))
-		return;
-
-	for (auto& w : windings)
-	{
-
-
-		if (info.only_bounces && w.is_bounce == false)
-			continue;
-
-		if (info.only_elevators && w.is_elevator == false)
-			continue;
-
-		vec4_t c = { 0,1,0,0.3f };
-
-		if (info.as_polygons) {
-			c[0] = w.color[0];
-			c[1] = w.color[1];
-			c[2] = w.color[2];
-		}
-		c[3] = info.alpha;
-
-		if (info.only_bounces) {
-			float n = w.normals[2];
-
-			if (n > 0.7f || n < 0.3f)
-				n = 0.f;
-			else
-				n = 1.f - (n - 0.3f) / (0.7f - 0.3f);
-
-			c[0] = 1.f - n;
-			c[1] = n;
-			c[2] = 0.f;
-		}
-
-		const auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
-		func(w.points, c, info.depth_test);
-
-	}
-
-	if (info.only_elevators == 2 && brush->has_collision()) {
-
-		std::vector<fvec3> pts(2);
-
-		const auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
-		for (const auto& w : corners) {
-			func(w->points, vec4_t{ 1,0,0,info.alpha }, info.depth_test);
-		}
-
-	}
-
-};
 void cm_brush::create_corners()
 {
 	//get all ele surfaces
@@ -133,41 +75,40 @@ int cm_brush::map_export(std::ofstream& o, int index) const
 
 	return ++index;
 }
-
-void cm_terrain::render(const cm_renderinfo& info) const
+void cm_brush::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 {
-	if (info.only_elevators)
+
+	if (info.only_colliding && brush->has_collision() == false)
 		return;
 
-	std::vector<fvec3> points(3);
-	fvec3 center;
+	if (origin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return;
 
-	for (auto& tri : tris)
-	{
-		if (tri.has_collision == false && info.only_colliding)
+	if (!CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes))
+		return;
+
+	for (const auto& w : windings) {
+
+		if (RB_CheckTessOverflow(num_verts, 3 * (num_verts - 2)))
+			RB_TessOverflow(true, info.depth_test);
+
+		if (info.only_bounces && w.is_bounce == false)
 			continue;
 
-
-
-		if ((tri.plane[2] < 0.3f || tri.plane[2] > 0.7f) && info.only_bounces)
+		if (info.only_elevators && w.is_elevator == false)
 			continue;
 
-		if (tri.a.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
-			continue;
+		vec4_t c = { 0,1,0, info.alpha };
 
-		if (!CM_TriangleInView(&tri, info.frustum_planes, info.num_planes))
-			continue;
-
-		vec4_t c = 
-		{ 
-			tri.color[0],
-			tri.color[1],
-			tri.color[2],
-			info.alpha
-		};
+		//only use sunlight when there are no outlines in a polygon
+		//if (info.poly_render_type == pt_polys) {
+			c[0] = w.color[0];
+			c[1] = w.color[1];
+			c[2] = w.color[2];
+		//}
 
 		if (info.only_bounces) {
-			float n = tri.plane[2];
+			float n = w.normals[2];
 
 			if (n > 0.7f || n < 0.3f)
 				n = 0.f;
@@ -179,21 +120,52 @@ void cm_terrain::render(const cm_renderinfo& info) const
 			c[2] = 0.f;
 		}
 
+		CM_MakeInteriorRenderable(w.points, c);
+	}
+}
 
-		points[0] = (tri.a);
-		points[1] = (tri.b);
-		points[2] = (tri.c);
+int cm_brush::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	auto total_vert_count = nverts;
 
-		center.x = { (points[0].x + points[1].x + points[2].x) / 3 };
-		center.y = { (points[0].y + points[1].y + points[2].y) / 3 };
-		center.z = { (points[0].z + points[1].z + points[2].z) / 3 };
+	if (info.only_colliding && brush->has_collision() == false)
+		return total_vert_count;
 
-		if (center.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+	if (origin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return total_vert_count;
+
+	if (!CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes))
+		return nverts;
+
+
+
+	for (const auto& w : windings) {
+
+		if (info.only_bounces && w.is_bounce == false)
 			continue;
 
-		const auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
-		func(points, c, info.depth_test);
+		if (info.only_elevators && w.is_elevator == false)
+			continue;
+
+		vec4_t c = { w.color[0],w.color[1],w.color[2],info.alpha};
+
+		if (info.only_bounces) {
+			float n = w.normals[2];
+
+			if (n > 0.7f || n < 0.3f)
+				n = 0.f;
+			else
+				n = 1.f - (n - 0.3f) / (0.7f - 0.3f);
+
+			c[0] = 1.f - n;
+			c[1] = n;
+			c[2] = 0.f;
+		}
+
+		total_vert_count = CM_MakeOutlinesRenderable(w.points, c, info.depth_test, total_vert_count);
 	}
+
+	return total_vert_count;
 }
 int cm_terrain::map_export(std::ofstream& o, int index) const
 {
@@ -226,7 +198,6 @@ int cm_terrain::map_export_triangle(std::ofstream& o, const cm_triangle& tri, in
 
 	return ++index;
 }
-
 void cm_terrain::render2d()
 {
 	size_t index = 0;
@@ -248,6 +219,115 @@ void cm_terrain::render2d()
 	}
 }
 
+void cm_terrain::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+{
+	if (info.only_elevators)
+		return;
+
+	std::vector<fvec3> points(3);
+
+	for (const auto& tri : tris) {
+
+		if (tri.has_collision == false && info.only_colliding)
+			continue;
+
+		if ((tri.plane[2] < 0.3f || tri.plane[2] > 0.7f) && info.only_bounces)
+			continue;
+
+		if (tri.a.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+			continue;
+
+		if (!CM_TriangleInView(&tri, info.frustum_planes, info.num_planes))
+			continue;
+
+		if (RB_CheckTessOverflow(num_verts, 3 * (num_verts - 2)))
+			RB_TessOverflow(true, info.depth_test);
+
+		vec4_t c =
+		{
+			tri.color[0],
+			tri.color[1],
+			tri.color[2],
+			info.alpha
+		};
+
+		if (info.only_bounces) {
+			float n = tri.plane[2];
+
+			if (n > 0.7f || n < 0.3f)
+				n = 0.f;
+			else
+				n = 1.f - (n - 0.3f) / (0.7f - 0.3f);
+
+			c[0] = 1.f - n;
+			c[1] = n;
+			c[2] = 0.f;
+		}
+
+
+		points[0] = (tri.a);
+		points[1] = (tri.b);
+		points[2] = (tri.c);
+
+		CM_MakeInteriorRenderable(points, c);
+	}
+}
+int cm_terrain::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	auto total_vert_count = nverts;
+
+	if (info.only_elevators)
+		return total_vert_count;
+
+	std::vector<fvec3> points(3);
+
+	for (const auto& tri : tris) {
+
+		if (tri.has_collision == false && info.only_colliding)
+			continue;
+
+		if ((tri.plane[2] < 0.3f || tri.plane[2] > 0.7f) && info.only_bounces)
+			continue;
+
+		if (tri.a.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+			continue;
+
+		if (!CM_TriangleInView(&tri, info.frustum_planes, info.num_planes))
+			continue;
+
+		if (RB_CheckTessOverflow(num_verts, 3 * (num_verts - 2)))
+			RB_TessOverflow(true, info.depth_test);
+
+		vec4_t c =
+		{
+			tri.color[0],
+			tri.color[1],
+			tri.color[2],
+			info.alpha
+		};
+
+		if (info.only_bounces) {
+			float n = tri.plane[2];
+
+			if (n > 0.7f || n < 0.3f)
+				n = 0.f;
+			else
+				n = 1.f - (n - 0.3f) / (0.7f - 0.3f);
+
+			c[0] = 1.f - n;
+			c[1] = n;
+			c[2] = 0.f;
+		}
+
+		points[0] = (tri.a);
+		points[1] = (tri.b);
+		points[2] = (tri.c);
+
+		total_vert_count = CM_MakeOutlinesRenderable(points, c, info.depth_test, total_vert_count);
+	}
+
+	return total_vert_count;
+}
 void CClipMap::Insert(std::unique_ptr<cm_geometry>& geom) {
 
 	if (geom)

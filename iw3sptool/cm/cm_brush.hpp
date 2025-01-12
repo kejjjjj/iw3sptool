@@ -25,10 +25,11 @@ enum class showCollisionType
 	TERRAIN,
 	BOTH
 };
-enum class polyType
+enum EPolyType : char
 {
-	EDGES,
-	POLYS,
+	pt_edges,
+	pt_polys,
+	pt_both
 };
 
 void CM_ShowCollisionFilter();

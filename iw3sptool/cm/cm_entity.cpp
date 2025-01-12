@@ -98,20 +98,6 @@ bool CGameEntity::IsBrushModel() const noexcept
 	assert(m_pOwner != nullptr);
 	return m_pOwner->r.bmodel;
 }
-void CGameEntity::RB_Render3D(const cm_renderinfo& info) const
-{
-
-	if (m_vecOrigin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
-		return;
-
-	//RB_RenderConnections(info);
-
-	if (!BoundsInView(m_pOwner->r.absmin, m_pOwner->r.absmax, info.frustum_planes, info.num_planes))
-		return;
-
-	//const vec4_t CYAN = { 0.f, 1.f, 1.f, info.alpha };
-	//(info.as_polygons ? CM_DrawBoxPolygons : CM_DrawBoxEdges)(m_pOwner->r.absmin, m_pOwner->r.absmax, info.depth_test, CYAN);
-}
 void CGameEntity::CG_Render2D(float draw_dist, entity_info_type entType) const
 {
 	if (entType == entity_info_type::eit_disabled)
@@ -181,28 +167,43 @@ CBrushModel::CBrushModel(gentity_s* const g) : CGameEntity(g)
 }
 CBrushModel::~CBrushModel() = default;
 
-void CBrushModel::RB_Render3D(const cm_renderinfo & info) const
+void CBrushModel::RB_MakeInteriorsRenderable([[maybe_unused]] const cm_renderinfo& info) const 
 {
-	//RB_RenderConnections(info);
-
 	for (auto& bmodel : m_oBrushModels) {
 
 		if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles)
 			bmodel->OnPositionChanged(m_vecOrigin, m_vecAngles);
 
-		bmodel->RB_Render3D(info);
+		bmodel->RB_MakeInteriorsRenderable(info);
 	}
 
 	m_vecOldOrigin = m_vecOrigin;
 	m_vecOldAngles = m_vecAngles;
 }
+int CBrushModel::RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, int nverts) const 
+{
+	for (auto& bmodel : m_oBrushModels) {
+
+		if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles)
+			bmodel->OnPositionChanged(m_vecOrigin, m_vecAngles);
+
+		nverts = bmodel->RB_MakeOutlinesRenderable(info, nverts);
+	}
+
+	m_vecOldOrigin = m_vecOrigin;
+	m_vecOldAngles = m_vecAngles;
+
+	return nverts;
+}
 
 CBrushModel::CIndividualBrushModel::CIndividualBrushModel(gentity_s* const g) : m_pOwner(g) { assert(g != nullptr); }
 CBrushModel::CIndividualBrushModel::~CIndividualBrushModel() = default;
 
-void CBrushModel::CIndividualBrushModel::RB_Render3D(const cm_renderinfo & info) const
-{
-	GetSource().render(info);
+void CBrushModel::CIndividualBrushModel::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const {
+	GetSource().RB_MakeInteriorsRenderable(info);
+}
+int CBrushModel::CIndividualBrushModel::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const {
+	return GetSource().RB_MakeOutlinesRenderable(info, nverts);
 }
 
 fvec3 CBrushModel::CIndividualBrushModel::GetCenter() const noexcept
@@ -237,6 +238,9 @@ void CBrushModel::CBrush::OnPositionChanged(const fvec3& newOrigin, const fvec3 
 		}
 	}
 
+	m_oCurrentGeometry.mins = m_pOwner->r.absmin;
+	m_oCurrentGeometry.maxs = m_pOwner->r.absmax;
+	m_oCurrentGeometry.origin = m_pOwner->r.currentOrigin;
 
 }
 
@@ -244,8 +248,7 @@ const cm_geometry& CBrushModel::CBrush::GetSource() const noexcept
 {
 	return m_oCurrentGeometry;
 }
-
-void CBrushModel::CBrush::RB_Render3D(const cm_renderinfo & info) const
+void CBrushModel::CBrush::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 {
 	if (((fvec3&)m_pOwner->r.currentOrigin).dist(cgs->predictedPlayerState.origin) > info.draw_dist)
 		return;
@@ -255,13 +258,19 @@ void CBrushModel::CBrush::RB_Render3D(const cm_renderinfo & info) const
 	if (BoundsInView(center + m_pSourceBrush->mins, center + m_pSourceBrush->maxs, info.frustum_planes, info.num_planes) == false)
 		return;
 
-	const auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
+	m_oCurrentGeometry.RB_MakeInteriorsRenderable(info);
+}
+int CBrushModel::CBrush::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	if (((fvec3&)m_pOwner->r.currentOrigin).dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return nverts;
 
-	for (const auto& w : m_oCurrentGeometry.windings) {
-		const vec4_t color = { w.color[0], w.color[1], w.color[2], info.alpha };
-		func(w.points, color, info.depth_test);
-	}
+	const auto center = GetCenter();
 
+	if (BoundsInView(center + m_pSourceBrush->mins, center + m_pSourceBrush->maxs, info.frustum_planes, info.num_planes) == false)
+		return nverts;
+
+	return m_oCurrentGeometry.RB_MakeOutlinesRenderable(info, nverts);
 }
 
 CBrushModel::CTerrain::CTerrain(gentity_s* const g, const cLeaf_t* const leaf) : CIndividualBrushModel(g), m_pSourceLeaf(leaf) {}
@@ -273,7 +282,26 @@ CBrushModel::CTerrain::CTerrain(gentity_s* const g, const cLeaf_t* const leaf, c
 
 CBrushModel::CTerrain::~CTerrain() = default;
 
-void CBrushModel::CTerrain::OnPositionChanged(const fvec3 & newOrigin, const fvec3 & newAngles)
+void CBrushModel::CTerrain::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+{
+	if (((fvec3&)m_pOwner->r.currentOrigin).dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return;
+
+	const auto center = GetCenter();
+
+	m_oCurrentGeometry.RB_MakeInteriorsRenderable(info);
+}
+int CBrushModel::CTerrain::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	if (((fvec3&)m_pOwner->r.currentOrigin).dist(cgs->predictedPlayerState.origin) > info.draw_dist)
+		return nverts;
+
+	const auto center = GetCenter();
+
+	return m_oCurrentGeometry.RB_MakeOutlinesRenderable(info, nverts);
+}
+
+void CBrushModel::CTerrain::OnPositionChanged(const fvec3 & newOrigin, const fvec3& newAngles)
 {
 	m_oCurrentGeometry = m_oOriginalGeometry;
 
@@ -283,8 +311,11 @@ void CBrushModel::CTerrain::OnPositionChanged(const fvec3 & newOrigin, const fve
 		tri.a = VectorRotate(tri.a + newOrigin, newAngles, center);
 		tri.b = VectorRotate(tri.b + newOrigin, newAngles, center);
 		tri.c = VectorRotate(tri.c + newOrigin, newAngles, center);
-
 	}
+
+	m_oCurrentGeometry.mins = m_pOwner->r.absmin;
+	m_oCurrentGeometry.maxs = m_pOwner->r.absmax;
+	m_oCurrentGeometry.origin = m_pOwner->r.currentOrigin;
 
 }
 const cm_geometry& CBrushModel::CTerrain::GetSource() const noexcept
@@ -295,8 +326,8 @@ const cm_geometry& CBrushModel::CTerrain::GetSource() const noexcept
 CSpawnerEntity::CSpawnerEntity(gentity_s* gent) : CGameEntity(gent),
 	geometry(CM_CreateSphere({ m_vecOrigin.x, m_vecOrigin.y, m_vecOrigin.z + 36 }, 1.f, 5, 5, { 16,16,36 })){}
 
-void CSpawnerEntity::RB_Render3D(const cm_renderinfo& info) const {
-
+void CSpawnerEntity::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+{
 	if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles) {
 
 		fvec3 org = m_pOwner->r.currentOrigin;
@@ -314,11 +345,30 @@ void CSpawnerEntity::RB_Render3D(const cm_renderinfo& info) const {
 	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
 		return;
 
-	auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
+	CM_MakeInteriorRenderable(geometry, vec4_t{ 1,0,0,1 });
 
-	func(geometry, vec4_t{ 1,0,0,0.3f }, info.depth_test);
 }
+int CSpawnerEntity::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	if (m_vecOrigin != m_vecOldOrigin || m_vecAngles != m_vecOldAngles) {
 
+		fvec3 org = m_pOwner->r.currentOrigin;
+		fvec3 maxs = m_pOwner->r.maxs;
+
+		org.z += (maxs.z - m_pOwner->r.mins[2]) / 2;
+		maxs.z /= 2;
+
+		geometry = CM_CreateSphere(org, 1.f, 5, 5, maxs);
+
+		m_vecOldOrigin = m_vecOrigin;
+		m_vecOldAngles = m_vecAngles;
+	}
+
+	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
+		return nverts;
+
+	return CM_MakeOutlinesRenderable(geometry, vec4_t{ 1,0,0,1 }, info.depth_test, nverts);
+}
 
 void CRadiusEntity::RefreshGeometry() {
 
@@ -367,18 +417,28 @@ void CRadiusEntity::RefreshGeometry() {
 	}
 }
 
-void CRadiusEntity::RB_Render3D(const cm_renderinfo& info) const {
-
+void CRadiusEntity::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+{
 	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
 		return;
 
-	auto func = info.as_polygons ? CM_DrawCollisionPoly : CM_DrawCollisionEdges;
+	const auto c = vec4_t{ 0.f, 1.f, 1.f, info.alpha };
 
-	func(xy_cylinder_top, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
-	func(xy_cylinder_bottom, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
-	func(xy_cylinder_side, vec4_t{ 0.f, 1.f, 1.f, info.alpha }, info.depth_test);
+	CM_MakeInteriorRenderable(xy_cylinder_top, c);
+	CM_MakeInteriorRenderable(xy_cylinder_bottom, c);
+	CM_MakeInteriorRenderable(xy_cylinder_side, c);
 }
+int CRadiusEntity::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+{
+	if (m_vecOrigin.dist(predictedPlayerState->origin) > info.draw_dist)
+		return nverts;
 
+	const auto c = vec4_t{ 0.f, 1.f, 1.f, info.alpha };
+
+	nverts = CM_MakeOutlinesRenderable(xy_cylinder_top, c, info.depth_test, nverts);
+	nverts = CM_MakeOutlinesRenderable(xy_cylinder_bottom, c, info.depth_test, nverts);
+	return CM_MakeOutlinesRenderable(xy_cylinder_side, c, info.depth_test, nverts);
+}
 bool G_EntityIsSpawner(const std::string& classname)
 {
 	const static std::vector<const char*> classnames = { "actor_", "script_origin", "script_struct", "strict_vehicle", "struct_model" };

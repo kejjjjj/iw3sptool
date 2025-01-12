@@ -7,6 +7,8 @@
 #include "cm_typedefs.hpp"
 #include "com/com_vector.hpp"
 #include "dvar/dvar.hpp"
+#include "g/g_entity.hpp"
+#include "r/r_debug.hpp"
 #include "r/rb_endscene.hpp"
 #include "typedefs.hpp"
 #include "utils/hook.hpp"
@@ -14,8 +16,6 @@
 using namespace std::string_literals;
 
 #include <ranges>
-#include <g/g_entity.hpp>
-
 
 char RB_DrawDebug(GfxViewParms* viewParms)
 {
@@ -25,9 +25,47 @@ char RB_DrawDebug(GfxViewParms* viewParms)
 	return hooktable::find<char, GfxViewParms*>(HOOK_PREFIX(__func__))->call(viewParms);
 }
 
-void CM_DrawCollisionPoly(const std::vector<fvec3>& points, const float* colorFloat, bool depthtest)
+void CM_MakeInteriorRenderable(const std::vector<fvec3>& points, const float* _color)
+{
+	GfxColor color;
+	std::size_t idx{};
+
+	auto n_points = points.size();
+
+	R_ConvertColorToBytes(_color, &color);
+
+	for (idx = 0; idx < n_points; ++idx) {
+		RB_SetPolyVertice(points[idx].As<float*>(), color, tess->vertexCount + idx, idx, 0);
+	}
+
+	for (idx = 2; idx < n_points; ++idx) {
+		tess->indices[tess->indexCount + 0] = static_cast<short>(tess->vertexCount);
+		tess->indices[tess->indexCount + 1] = static_cast<short>(idx + tess->vertexCount);
+		tess->indices[tess->indexCount + 2] = static_cast<short>(idx + tess->vertexCount - 1);
+		tess->indexCount += 3;
+	}
+
+	tess->vertexCount += n_points;
+}
+int CM_MakeOutlinesRenderable(const std::vector<fvec3>& points, const float* color, bool depthTest, int nverts)
+{
+	auto n_points = points.size();
+	auto vert_index_prev = n_points - 1u;
+
+	for (auto i : std::views::iota(0u, n_points)) {
+
+		nverts = RB_AddDebugLine(g_debugPolyVerts, depthTest,
+			points[vert_index_prev].As<float*>(), points[i].As<float*>(), color, nverts);
+		vert_index_prev = i;
+	}
+
+	return nverts;
+}
+void CM_DrawCollisionPoly(const std::vector<fvec3>& points, const float* colorFloat, [[maybe_unused]]bool depthtest)
 {
 	RB_DrawPolyInteriors(points, colorFloat, true, depthtest);
+
+	//R_AddDebugPolygon(points, colorFloat);
 }
 
 GfxPointVertex verts[2075];
@@ -59,7 +97,6 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 	cplane_s frustum_planes[6];
 	CreateFrustumPlanes(frustum_planes);
 
-	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 
 	cm_renderinfo render_info =
 	{
@@ -67,32 +104,59 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 		.num_planes = 5,
 		.draw_dist = Dvar_FindMalleableVar("cm_showCollisionDist")->current.value,
 		.depth_test = Dvar_FindMalleableVar("cm_showCollisionDepthTest")->current.enabled,
-		.as_polygons = static_cast<polyType>(Dvar_FindMalleableVar("cm_showCollisionPolyType")->current.integer) == polyType::POLYS,
+		.poly_render_type = Dvar_FindMalleableVar("cm_showCollisionPolyType")->current.integer,
 		.only_colliding = Dvar_FindMalleableVar("cm_ignoreNonColliding")->current.enabled,
 		.only_bounces = Dvar_FindMalleableVar("cm_onlyBounces")->current.enabled,
 		.only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.integer,
 		.alpha = Dvar_FindMalleableVar("cm_showCollisionPolyAlpha")->current.value
 	};
 
+	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 	const bool brush_allowed = collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH;
 	const bool terrain_allowed = collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH;
 
-	{
+	if (render_info.poly_render_type != pt_edges)  {
+
 		std::unique_lock<std::mutex> lock(CClipMap::GetLock());
-		CClipMap::ForEach([&](const GeometryPtr_t& geom) {
-			if (geom->type() == cm_geomtype::brush && brush_allowed || geom->type() == cm_geomtype::terrain && terrain_allowed)
-				geom->render(render_info);
-			});
-	}
-	
-	{
+		RB_BeginSurfaceInternal(true, render_info.depth_test);
 
-			
+		CClipMap::ForEach([&](const GeometryPtr_t& poly) {
 
-		std::unique_lock<std::mutex> lock(CGentities::GetLock());
+			if (RB_CheckTessOverflow(poly->num_verts, 3 * (poly->num_verts - 2)))
+				RB_TessOverflow(true, render_info.depth_test);
+
+			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed)
+				poly->RB_MakeInteriorsRenderable(render_info);
+		});
+
+		std::unique_lock<std::mutex> gentLock(CGentities::GetLock());
 
 		CGentities::ForEach([&render_info](const GentityPtr_t& gent) {
-			gent->RB_Render3D(render_info); });
+			gent->RB_MakeInteriorsRenderable(render_info); 
+		});
+
+		RB_EndTessSurface();
 	}
+	if (render_info.poly_render_type != pt_polys){
+
+		int vert_count = 0;
+		std::unique_lock<std::mutex> lock(CClipMap::GetLock());
+
+		CClipMap::ForEach([&](const GeometryPtr_t& poly) {
+			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed)
+				vert_count = poly->RB_MakeOutlinesRenderable(render_info, vert_count);
+		});
+
+		std::unique_lock<std::mutex> gentLock(CGentities::GetLock());
+
+		CGentities::ForEach([&](const GentityPtr_t& gent) {
+			vert_count = gent->RB_MakeOutlinesRenderable(render_info, vert_count);
+		});
+
+		if (vert_count)
+			RB_DrawLines3D(vert_count / 2, 1, g_debugPolyVerts, render_info.depth_test);
+
+	}
+
 
 }

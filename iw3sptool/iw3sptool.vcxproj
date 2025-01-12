@@ -188,6 +188,7 @@
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="r\rb_endscene.hpp" />
     <ClInclude Include="r\r_active.hpp" />
+    <ClInclude Include="r\r_debug.hpp" />
     <ClInclude Include="r\r_drawtools.hpp" />
     <ClInclude Include="scr\scr.hpp" />
     <ClInclude Include="typedefs.hpp" />
@@ -242,6 +243,7 @@
     </ClCompile>
     <ClCompile Include="r\rb_endscene.cpp" />
     <ClCompile Include="r\r_active.cpp" />
+    <ClCompile Include="r\r_debug.cpp" />
     <ClCompile Include="r\r_drawtools.cpp" />
     <ClCompile Include="scr\scr.cpp" />
     <ClCompile Include="utils\engine.cpp" />

@@ -122,14 +122,13 @@ private:
 		return { _x, _y, _z };
 	}
 };
-
 struct cm_renderinfo
 {
 	cplane_s* frustum_planes = {};
 	int num_planes = {};
 	float draw_dist = {};
 	bool depth_test = {};
-	bool as_polygons = {};
+	int poly_render_type = {};
 	bool only_colliding = {};
 	bool only_bounces = {};
 	int only_elevators = {};
@@ -139,20 +138,24 @@ struct cm_renderinfo
 };
 
 class brushModelEntity;
-
 struct cm_geometry
 {
 	virtual ~cm_geometry() = default;
-	virtual void render(const cm_renderinfo& info) const = 0;
 	virtual cm_geomtype type() const noexcept = 0;
 	virtual int map_export(std::ofstream& o, int index) const = 0;
-	virtual void render2d() = 0;
+	virtual void render2d() { return; }
+
+	virtual void RB_MakeInteriorsRenderable([[maybe_unused]]const cm_renderinfo& info) const { return; }
+	virtual int RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, int nverts) const { return nverts; }
+
 	fvec3 origin;
+	fvec3 mins, maxs;
 	bool has_collisions = {};
 	int originalContents = {};
 	int num_verts = {};
 };
 
+inline GfxPointVertex g_debugPolyVerts[2725];
 
 struct cm_brush : public cm_geometry
 {
@@ -163,8 +166,10 @@ struct cm_brush : public cm_geometry
 	cm_geomtype type() const noexcept override { return cm_geomtype::brush; }
 
 	void create_corners();
-	void render(const cm_renderinfo& info) const override;
-	void render2d() override {}
+
+	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
+
 
 	friend void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2);
 	friend std::unique_ptr<cm_geometry> CM_GetBrushPoints(const cbrush_t* brush, const fvec3& poly_col);
@@ -194,8 +199,10 @@ struct cm_terrain : public cm_geometry
 
 	[[nodiscard]] constexpr cm_geomtype type() const noexcept override { return cm_geomtype::terrain; }
 
-	void render(const cm_renderinfo& info) const override;
 	void render2d() override;
+
+	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
 
 	[[nodiscard]] constexpr bool IsValid() const noexcept { return !!leaf; }
 
@@ -217,11 +224,7 @@ struct cm_model : public cm_geometry
 {
 	~cm_model() = default;
 
-	void render([[maybe_unused]] const cm_renderinfo& info) const override {};
-	void render2d() override {};
-
 	int map_export(std::ofstream& o, int index) const override;
-
 
 	const char* name = {};
 	fvec3 origin;

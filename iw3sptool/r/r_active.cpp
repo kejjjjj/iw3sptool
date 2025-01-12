@@ -1,10 +1,13 @@
+#include "cg/cg_offsets.hpp"
+#include "cl/cl_keymove.hpp"
+#include "cm/cm_entity.hpp"
+#include "cm/cm_renderer.hpp"
+#include "com/com_channel.hpp"
 #include "dvar/dvar.hpp"
+#include "r_debug.hpp"
 #include "r_drawtools.hpp"
-#include <cg/cg_offsets.hpp>
-#include <cm/cm_entity.hpp>
 #include "utils/hook.hpp"
-#include <cl/cl_keymove.hpp>
-#include <com/com_channel.hpp>
+
 #include <iostream>
 
 void CG_DrawActive()
@@ -69,9 +72,6 @@ void CG_DrawActive()
 }
 
 static void __Test();
-void R_AddDebugLine(const float* start, const float* end, const float* color);
-void R_AddDebugBox(const float* mins, const float* maxs, const float* color);
-
 __declspec(naked) void R_AddWorldSurfacesPortalWalk()
 {
 	__asm
@@ -90,44 +90,16 @@ __declspec(naked) void R_AddWorldSurfacesPortalWalk()
 void __Test()
 {
 
-	static vec3_t mins = { 0, 0, 0 };
-	static vec3_t maxs = { 10, 10, 10 };
-	static vec4_t c = { 0, 1, 1, 1 };
+	//static vec3_t mins = { 0, 0, 0 };
+	//static vec3_t maxs = { 10, 10, 10 };
+	//static vec4_t c = { 0, 1, 1, 1 };
 
-	R_AddDebugLine(mins, maxs, c);
-	R_AddDebugBox(mins, maxs, c);
+	//R_AddDebugLine(mins, maxs, c);
+	//R_AddDebugBox(mins, maxs, c);
 
+	//std::vector<fvec3> pts = { { -100.f, 0.f, -100.f }, { 0.f, 0.f, 0.f }, { 100.f, 0.f, -100.f } };
 
-}
+	//R_AddDebugPolygon(pts, vec4_t{ 1,1,1,0.5f });
 
-void R_AddDebugLine(const float* start, const float* end, const float* color)
-{
-	constexpr auto func = 0x5EE720;
-	__asm
-	{
-		mov esi, ds:1621DECh;
-		add esi, 11E71Ch;
-		push color;
-		push end;
-		push start;
-		call func;
-		add esp, 12;
-	}
-}
-void R_AddDebugBox(const float* mins, const float* maxs, const float* color)
-{
-	//DebugGlobals* globals = (DebugGlobals*)(0x1621DEC + 1173276);
-
-	constexpr auto func = 0x5EE7D0;
-	__asm
-	{
-		mov ecx, ds:1621DECh;
-		add ecx, 11E71Ch;
-		push color;
-		push ecx;
-		mov edx, maxs;
-		mov eax, mins;
-		call func;
-		add esp, 8;
-	}
+	//CM_ShowCollision(nullptr);
 }

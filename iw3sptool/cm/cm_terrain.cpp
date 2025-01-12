@@ -109,8 +109,9 @@ void CM_AdvanceAabbTree(cm_terrain& terrain, const CollisionAabbTree* aabbTree, 
 			tri.color[1] = color[1];
 			tri.color[2] = color[2];
 			tri.color[3] = 0.3f;
-
+			
 			terrain.tris.emplace_back(tri);
+			terrain.num_verts = 3;
 
 			++firstTri;
 			triIndice += 3;
