@@ -344,85 +344,36 @@ bool CM_BoundsInView(const fvec3& mins, const fvec3& maxs, struct cplane_s* frus
 
 	return 0;
 }
-std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& size)
+constexpr std::array<std::int32_t, 24> iEdgePairs =
 {
-	std::vector<fvec3> vertices;
+  0, 1, 0, 2, 0, 4, 1, 3, 1, 5, 2, 3,
+  2, 6, 3, 7, 4, 5, 4, 6, 5, 7, 6, 7
+};
+constexpr auto iNextEdgePair = &iEdgePairs[1];
 
-	// Define the eight vertices of the cube
-	fvec3 v0 = origin;
-	fvec3 v1 = origin + fvec3(size.x, 0, 0);
-	fvec3 v2 = origin + fvec3(size.x, size.y, 0);
-	fvec3 v3 = origin + fvec3(0, size.y, 0);
-
-	fvec3 v4 = origin + fvec3(0, 0, size.z);
-	fvec3 v5 = origin + fvec3(size.x, 0, size.z);
-	fvec3 v6 = origin + fvec3(size.x, size.y, size.z);
-	fvec3 v7 = origin + fvec3(0, size.y, size.z);
-
-	// Order the vertices for the lines
-	vertices.push_back(v0);
-	vertices.push_back(v1);
-
-	vertices.push_back(v1);
-	vertices.push_back(v2);
-
-	vertices.push_back(v2);
-	vertices.push_back(v3);
-
-	vertices.push_back(v3);
-	vertices.push_back(v0);
-
-	vertices.push_back(v4);
-	vertices.push_back(v5);
-
-	vertices.push_back(v5);
-	vertices.push_back(v6);
-
-	vertices.push_back(v6);
-	vertices.push_back(v7);
-
-	vertices.push_back(v7);
-	vertices.push_back(v4);
-
-	vertices.push_back(v0);
-	vertices.push_back(v4);
-
-	vertices.push_back(v1);
-	vertices.push_back(v5);
-
-	vertices.push_back(v2);
-	vertices.push_back(v6);
-
-	vertices.push_back(v3);
-	vertices.push_back(v7);
-
-	return vertices;
-}
-std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& mins, const fvec3& maxs)
+std::vector<fvec3> CM_CreateHitbox(const fvec3& mins, const fvec3& maxs)
 {
-	std::vector<fvec3> vertices;
+	constexpr auto iota = std::views::iota;
 
-	// Define the 8 vertices of the cube
-	fvec3 v1 = { origin.x + mins.x, origin.y + mins.y, origin.z + mins.z }; // Min corner
-	fvec3 v2 = { origin.x + maxs.x, origin.y + mins.y, origin.z + mins.z };
-	fvec3 v3 = { origin.x + maxs.x, origin.y + maxs.y, origin.z + mins.z };
-	fvec3 v4 = { origin.x + mins.x, origin.y + maxs.y, origin.z + mins.z };
-	fvec3 v5 = { origin.x + mins.x, origin.y + mins.y, origin.z + maxs.z }; // Max corner
-	fvec3 v6 = { origin.x + maxs.x, origin.y + mins.y, origin.z + maxs.z };
-	fvec3 v7 = { origin.x + maxs.x, origin.y + maxs.y, origin.z + maxs.z };
-	fvec3 v8 = { origin.x + mins.x, origin.y + maxs.y, origin.z + maxs.z };
+	float v[8][3]{};
+	for (const auto i : iota(0u, 8u)) {
+		for (const auto j : iota(0u, 3u)) {
 
-	// Push the vertices into the vector
-	vertices.push_back(v1);
-	vertices.push_back(v2);
-	vertices.push_back(v3);
-	vertices.push_back(v4);
-	vertices.push_back(v5);
-	vertices.push_back(v6);
-	vertices.push_back(v7);
-	vertices.push_back(v8);
+			if ((i & (1 << j)) != 0)
+				v[i][j] = maxs[j];
+			else
+				v[i][j] = mins[j];
+		}
+	}
 
-	return vertices;
+
+	std::vector<fvec3> points;
+	for (const auto i : iota(0u, 12u)) {
+		points.emplace_back(v[iEdgePairs[i * 2]]);
+		points.emplace_back(v[iNextEdgePair[i * 2]]);
+	}
+
+	return points;
 }
 std::vector<fvec3> CM_CreateSphere(const fvec3& ref_org, const float radius, const int32_t latitudeSegments, const int32_t longitudeSegments, const fvec3& scale)
 {

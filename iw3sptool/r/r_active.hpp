@@ -2,5 +2,8 @@
 
 void CG_DrawActive();
 
-
-void R_AddWorldSurfacesPortalWalk();
+struct CGDebugData
+{
+	static volatile int tessVerts;
+	static volatile int tessIndices;
+};

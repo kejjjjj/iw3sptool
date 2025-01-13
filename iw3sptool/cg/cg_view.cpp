@@ -108,11 +108,11 @@ void RB_RenderPlayerHitboxes()
 	std::unordered_map<int, int> stance = { {60, 70}, {40, 50}, {11, 30} };
 
 	fvec3 o = cgs->predictedPlayerState.origin;
-	o.x -= 14.f;
-	o.y -= 14.f;
 
+	fvec3 mins = { o.x - 14.f, o.y - 14.f, o.z };
+	fvec3 maxs = { o.x + 14.f, o.y + 14.f, o.z + CG_GetPlayerHitboxHeight(&cgs->predictedPlayerState) };
 
-	auto v = CM_CreateCube(o, fvec3(28.f,28.f, CG_GetPlayerHitboxHeight(&cgs->predictedPlayerState)));
+	auto v = CM_CreateHitbox(mins, maxs);
 
 	CM_DrawCollisionEdges(v, vec4_t{1,1,0,0.7f}, true);
 

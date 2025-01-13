@@ -10,6 +10,7 @@
 #include "g/g_entity.hpp"
 #include "r/r_debug.hpp"
 #include "r/rb_endscene.hpp"
+#include "r/r_active.hpp"
 #include "typedefs.hpp"
 #include "utils/hook.hpp"
 
@@ -107,13 +108,16 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 		.poly_render_type = Dvar_FindMalleableVar("cm_showCollisionPolyType")->current.integer,
 		.only_colliding = Dvar_FindMalleableVar("cm_ignoreNonColliding")->current.enabled,
 		.only_bounces = Dvar_FindMalleableVar("cm_onlyBounces")->current.enabled,
-		.only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.integer,
+		.only_elevators = Dvar_FindMalleableVar("cm_onlyElevators")->current.enabled,
 		.alpha = Dvar_FindMalleableVar("cm_showCollisionPolyAlpha")->current.value
 	};
 
 	showCollisionType collisionType = static_cast<showCollisionType>(Dvar_FindMalleableVar("cm_showCollision")->current.integer);
 	const bool brush_allowed = collisionType == showCollisionType::BRUSHES || collisionType == showCollisionType::BOTH;
 	const bool terrain_allowed = collisionType == showCollisionType::TERRAIN || collisionType == showCollisionType::BOTH;
+
+	CGDebugData::tessVerts = 0;
+	CGDebugData::tessIndices = 0;
 
 	if (render_info.poly_render_type != pt_edges)  {
 
@@ -122,17 +126,29 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 
 		CClipMap::ForEach([&](const GeometryPtr_t& poly) {
 
-			if (RB_CheckTessOverflow(poly->num_verts, 3 * (poly->num_verts - 2)))
+			if (RB_CheckTessOverflow(poly->num_verts, 3 * (poly->num_verts - 2))) 
 				RB_TessOverflow(true, render_info.depth_test);
-
-			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed)
-				poly->RB_MakeInteriorsRenderable(render_info);
+			
+			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed) {
+				if (poly->RB_MakeInteriorsRenderable(render_info)) {
+					CGDebugData::tessVerts += poly->num_verts;
+					CGDebugData::tessIndices += 3 * (poly->num_verts - 2);
+				}
+			}
 		});
 
 		std::unique_lock<std::mutex> gentLock(CGentities::GetLock());
 
 		CGentities::ForEach([&render_info](const GentityPtr_t& gent) {
-			gent->RB_MakeInteriorsRenderable(render_info); 
+
+			auto numVerts = gent->GetNumVerts();
+			if (RB_CheckTessOverflow(numVerts, 3 * (numVerts - 2))) 
+				RB_TessOverflow(true, render_info.depth_test);
+			
+			if(gent->RB_MakeInteriorsRenderable(render_info)) {
+				CGDebugData::tessVerts += numVerts;
+				CGDebugData::tessIndices += 3 * (numVerts - 2);
+			}
 		});
 
 		RB_EndTessSurface();
@@ -143,18 +159,29 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 		std::unique_lock<std::mutex> lock(CClipMap::GetLock());
 
 		CClipMap::ForEach([&](const GeometryPtr_t& poly) {
-			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed)
-				vert_count = poly->RB_MakeOutlinesRenderable(render_info, vert_count);
+
+			if (poly->type() == cm_geomtype::brush && brush_allowed || poly->type() == cm_geomtype::terrain && terrain_allowed) {
+				if (poly->RB_MakeOutlinesRenderable(render_info, vert_count)) {
+					CGDebugData::tessVerts += poly->num_verts;
+					CGDebugData::tessIndices += 3 * (poly->num_verts - 2);
+				}
+			}
 		});
 
 		std::unique_lock<std::mutex> gentLock(CGentities::GetLock());
 
 		CGentities::ForEach([&](const GentityPtr_t& gent) {
-			vert_count = gent->RB_MakeOutlinesRenderable(render_info, vert_count);
+			auto numVerts = gent->GetNumVerts();
+
+			if (gent->RB_MakeOutlinesRenderable(render_info, vert_count)) {
+				CGDebugData::tessVerts += numVerts;
+				CGDebugData::tessIndices += 3 * (numVerts - 2);
+			}
 		});
 
 		if (vert_count)
 			RB_DrawLines3D(vert_count / 2, 1, g_debugPolyVerts, render_info.depth_test);
+
 
 	}
 

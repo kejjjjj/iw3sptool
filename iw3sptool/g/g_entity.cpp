@@ -19,7 +19,7 @@ volatile DWORD time_since_loadgame{};
 bool G_RepopulateEntities()
 {
 	//let a few frames pass
-	if (Sys_MilliSeconds() < time_since_loadgame + 50) {
+	if (Sys_MilliSeconds() < time_since_loadgame + 150) {
 		return false;
 	}
 
@@ -69,7 +69,8 @@ void G_DiscoverGentities(level_locals_t* l, const std::unordered_set<std::string
 		if (CM_IsMatchingFilter(filters, Scr_GetString(l->gentities[i].classname)) == false)
 			continue;
 
-		CGentities::Insert(CGameEntity::CreateEntity(&l->gentities[i]));
+		if(auto&& ent = CGameEntity::CreateEntity(&l->gentities[i]))
+			CGentities::Insert(ent);
 	}
 
 }

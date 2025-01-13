@@ -131,7 +131,7 @@ struct cm_renderinfo
 	int poly_render_type = {};
 	bool only_colliding = {};
 	bool only_bounces = {};
-	int only_elevators = {};
+	bool only_elevators = {};
 	float alpha = 0.7f;
 
 
@@ -145,8 +145,10 @@ struct cm_geometry
 	virtual int map_export(std::ofstream& o, int index) const = 0;
 	virtual void render2d() { return; }
 
-	virtual void RB_MakeInteriorsRenderable([[maybe_unused]]const cm_renderinfo& info) const { return; }
-	virtual int RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, int nverts) const { return nverts; }
+	[[nodiscard]] virtual bool RB_MakeInteriorsRenderable([[maybe_unused]]const cm_renderinfo& info) const { return false; }
+	[[nodiscard]] virtual bool RB_MakeOutlinesRenderable([[maybe_unused]] const cm_renderinfo& info, [[maybe_unused]] int& nverts) const {
+		return false; 
+	}
 
 	fvec3 origin;
 	fvec3 mins, maxs;
@@ -167,8 +169,8 @@ struct cm_brush : public cm_geometry
 
 	void create_corners();
 
-	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
-	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
+	[[nodiscard]] bool RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	[[nodiscard]] bool RB_MakeOutlinesRenderable(const cm_renderinfo& info, int& nverts) const override;
 
 
 	friend void __cdecl adjacency_winding(adjacencyWinding_t* w, float* points, vec3_t normal, unsigned int i0, unsigned int i1, unsigned int i2);
@@ -201,8 +203,8 @@ struct cm_terrain : public cm_geometry
 
 	void render2d() override;
 
-	void RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
-	int RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const override;
+	[[nodiscard]] bool RB_MakeInteriorsRenderable(const cm_renderinfo& info) const override;
+	[[nodiscard]] bool RB_MakeOutlinesRenderable(const cm_renderinfo& info, int& nverts) const override;
 
 	[[nodiscard]] constexpr bool IsValid() const noexcept { return !!leaf; }
 
@@ -285,7 +287,6 @@ private:
 	static std::unique_ptr<cm_geometry> m_pWipGeometry;
 	static fvec3 m_vecWipGeometryColor;
 	static LevelGeometry_t m_pLevelGeometry;
-
 	static std::mutex mtx;
 };
 
@@ -322,7 +323,6 @@ private:
 	static LevelGentities_t m_pLevelGentities;
 	static std::mutex mtx;
 	static bool m_bRePopulate;
-
 };
 
 void CM_LoadMap();

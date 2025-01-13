@@ -178,11 +178,10 @@ void PM_SprintFix(playerState_s* ps, pmove_t* pm)
 			mov eax, ps;
 			mov esi, 0x5B7890;
 			call esi;
-			retn;
 		}
 
-	}
-	ps->sprintState.sprintButtonUpRequired = 1;
+	}else
+		ps->sprintState.sprintButtonUpRequired = 1;
 }
 __declspec(naked) void PM_SprintFixASM()
 {

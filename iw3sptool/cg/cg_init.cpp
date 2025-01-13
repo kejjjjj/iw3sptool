@@ -55,8 +55,6 @@ void CG_Init()
     dvar_limits l{};
     dvar_value v{};
 
-    v.integer = 0;
-
     static const char* poly_types[] = {"Edges", "Polygons", "Both"};
     static const char* showCollisionNames[] = { "Disabled", "Brushes", "Terrain", "Both"};
     static const char* elevator_types[] = { "Disabled", "Enabled", "Include Corners" };
@@ -65,7 +63,7 @@ void CG_Init()
 
     l.enumeration.stringCount = 4;
     l.enumeration.strings = showCollisionNames;
-
+    v.integer = 3; //both
 
 
     Dvar_RegisterNew("cm_showCollision", dvar_type::enumeration, dvar_flags::saved, 
@@ -73,6 +71,7 @@ void CG_Init()
     
     l.enumeration.stringCount = 3;
     l.enumeration.strings = poly_types;
+    v.integer = 2; //both
 
     Dvar_RegisterNew("cm_showCollisionPolyType", dvar_type::enumeration, dvar_flags::saved, 
         "Select whether to display the collision surfaces as wireframe or poly interiors", v, l);
@@ -83,7 +82,7 @@ void CG_Init()
 
     Dvar_RegisterNew("cm_showCollisionDist", dvar_type::value, dvar_flags::saved, "Maximum distance to show collision surfaces", v, l);
 
-    v.value = 0.5f;
+    v.value = 0.1f;
     l.value.max = 1.f;
     l.value.min = 0.f;
     Dvar_RegisterNew("cm_showCollisionPolyAlpha", dvar_type::value, dvar_flags::saved, "Collision transparency", v, l);
@@ -104,12 +103,7 @@ void CG_Init()
     v.enabled = false;
 
     Dvar_RegisterNew("cm_onlyBounces", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be bounced", v, l);
-
-    l.enumeration.stringCount = 3;
-    l.enumeration.strings = elevator_types;
-    v.integer = 0;
-
-    Dvar_RegisterNew("cm_onlyElevators", dvar_type::enumeration, dvar_flags::none, "Only display surfaces which can be elevated", v, l);
+    Dvar_RegisterNew("cm_onlyElevators", dvar_type::boolean, dvar_flags::none, "Only display surfaces which can be elevated", v, l);
 
     v.enabled = false;
     Dvar_RegisterNew("cm_disableTriggers", dvar_type::boolean, dvar_flags::none, "Triggers will not have any effect", v, l);

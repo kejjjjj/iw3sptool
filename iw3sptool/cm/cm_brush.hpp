@@ -60,7 +60,6 @@ bool CM_IsMatchingFilter(const std::unordered_set<std::string>& filters, char* m
 bool CM_BrushHasCollisions(const cbrush_t* brush);
 
 
-std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& size);
-std::vector<fvec3> CM_CreateCube(const fvec3& origin, const fvec3& mins, const fvec3& maxs);
+std::vector<fvec3> CM_CreateHitbox(const fvec3& mins, const fvec3& maxs);
 std::vector<fvec3> CM_CreateSphere(const fvec3& ref_org, const float radius, const int32_t latitudeSegments, const int32_t longitudeSegments, const fvec3& scale);
 float RadiusFromBounds(const float* mins, const float* maxs);

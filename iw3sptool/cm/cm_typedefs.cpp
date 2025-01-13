@@ -75,18 +75,19 @@ int cm_brush::map_export(std::ofstream& o, int index) const
 
 	return ++index;
 }
-void cm_brush::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+bool cm_brush::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 {
 
 	if (info.only_colliding && brush->has_collision() == false)
-		return;
+		return false;
 
 	if (origin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
-		return;
+		return false;
 
 	if (!CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes))
-		return;
+		return false;
 
+	bool state = false;
 	for (const auto& w : windings) {
 
 		if (RB_CheckTessOverflow(num_verts, 3 * (num_verts - 2)))
@@ -121,21 +122,23 @@ void cm_brush::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 		}
 
 		CM_MakeInteriorRenderable(w.points, c);
+		state = true;
 	}
+
+	return state;
 }
 
-int cm_brush::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+bool cm_brush::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int& nverts) const
 {
-	auto total_vert_count = nverts;
 
 	if (info.only_colliding && brush->has_collision() == false)
-		return total_vert_count;
+		return false;
 
 	if (origin.dist(cgs->predictedPlayerState.origin) > info.draw_dist)
-		return total_vert_count;
+		return false;
 
 	if (!CM_BoundsInView(mins, maxs, info.frustum_planes, info.num_planes))
-		return nverts;
+		return false;
 
 
 
@@ -162,10 +165,10 @@ int cm_brush::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) c
 			c[2] = 0.f;
 		}
 
-		total_vert_count = CM_MakeOutlinesRenderable(w.points, c, info.depth_test, total_vert_count);
+		nverts = CM_MakeOutlinesRenderable(w.points, c, info.depth_test, nverts);
 	}
 
-	return total_vert_count;
+	return true;
 }
 int cm_terrain::map_export(std::ofstream& o, int index) const
 {
@@ -219,12 +222,14 @@ void cm_terrain::render2d()
 	}
 }
 
-void cm_terrain::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
+bool cm_terrain::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 {
 	if (info.only_elevators)
-		return;
+		return false;
 
 	std::vector<fvec3> points(3);
+
+	bool state = false;
 
 	for (const auto& tri : tris) {
 
@@ -270,16 +275,22 @@ void cm_terrain::RB_MakeInteriorsRenderable(const cm_renderinfo& info) const
 		points[2] = (tri.c);
 
 		CM_MakeInteriorRenderable(points, c);
+
+		state = true;
 	}
+
+	return state;
 }
-int cm_terrain::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts) const
+bool cm_terrain::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int& nverts) const
 {
-	auto total_vert_count = nverts;
 
 	if (info.only_elevators)
-		return total_vert_count;
+		return false;
 
 	std::vector<fvec3> points(3);
+
+	bool state = false;
+
 
 	for (const auto& tri : tris) {
 
@@ -323,10 +334,11 @@ int cm_terrain::RB_MakeOutlinesRenderable(const cm_renderinfo& info, int nverts)
 		points[1] = (tri.b);
 		points[2] = (tri.c);
 
-		total_vert_count = CM_MakeOutlinesRenderable(points, c, info.depth_test, total_vert_count);
+		nverts = CM_MakeOutlinesRenderable(points, c, info.depth_test, nverts);
+		state = true;
 	}
 
-	return total_vert_count;
+	return state;
 }
 void CClipMap::Insert(std::unique_ptr<cm_geometry>& geom) {
 
