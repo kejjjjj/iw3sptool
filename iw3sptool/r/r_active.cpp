@@ -20,13 +20,14 @@ static void CG_DrawCoordinates(float& y)
 
 	char buff[256];
 	sprintf_s(buff,
-		"x:     %.6f\n"
-		"y:     %.6f\n"
-		"z:     %.6f\n"
-		"yaw: %.6f", ps->origin[0], ps->origin[1], ps->origin[2], ps->viewangles[1]);
+		"x:       %.6f\n"
+		"y:       %.6f\n"
+		"z:       %.6f\n"
+		"yaw:   %.6f\n"
+		"pitch: %.6f", ps->origin[0], ps->origin[1], ps->origin[2], ps->viewangles[1], ps->viewangles[0]);
 	R_DrawTextWithEffects(buff, "fonts/bigdevFont", 0, y, 0.3f, 0.4f, 0, vec4_t{ 1,0.753f,0.796f,0.7f }, 3, vec4_t{ 1,0,0,0 });
 
-	y += 40.f;
+	y += 50.f;
 }
 static void CG_DrawVelocity(float& y)
 {
@@ -65,7 +66,7 @@ void CG_DrawActive()
 	static dvar_s* cm_showCollisionDist = Dvar_FindMalleableVar("cm_showCollisionDist");
 	static dvar_s* pm_coordinates = Dvar_FindMalleableVar("pm_coordinates");
 	static dvar_s* pm_velocity = Dvar_FindMalleableVar("pm_velocity");
-	static dvar_s* developer = Dvar_FindMalleableVar("developer");
+	static dvar_s* pm_debug = Dvar_FindMalleableVar("pm_debug");
 
 	OnDvarsModified();
 
@@ -79,7 +80,7 @@ void CG_DrawActive()
 		CG_DrawVelocity(y);
 	}
 
-	if (developer->current.enabled) {
+	if (pm_debug->current.enabled) {
 		CG_DrawDebug(y);
 	}
 	if (cm_entityInfo->current.integer) {

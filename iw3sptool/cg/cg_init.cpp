@@ -142,6 +142,7 @@ void CG_Init()
 
     Dvar_RegisterNew("pm_coordinates", dvar_type::boolean, dvar_flags::saved, "show player coordinates", v, l);
     Dvar_RegisterNew("pm_velocity", dvar_type::boolean, dvar_flags::saved, "show player velocity", v, l);
+    Dvar_RegisterNew("pm_debug", dvar_type::boolean, dvar_flags::saved, "show debug information", v, l);
 
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
 
