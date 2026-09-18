@@ -49,6 +49,9 @@
     <Filter Include="Source Files\bg">
       <UniqueIdentifier>{f5759a1f-7c12-40b5-b274-58398f53163f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\tas">
+      <UniqueIdentifier>{b90c9b88-b568-4a30-af11-acd43eda7b33}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mh\buffer.h">
@@ -189,6 +192,18 @@
     <ClInclude Include="r\r_debug.hpp">
       <Filter>Source Files\r</Filter>
     </ClInclude>
+    <ClInclude Include="tas\tas.hpp">
+      <Filter>Source Files\tas</Filter>
+    </ClInclude>
+    <ClInclude Include="tas\json_helpers.hpp">
+      <Filter>Source Files\tas</Filter>
+    </ClInclude>
+    <ClInclude Include="g\g_weapon.hpp">
+      <Filter>Source Files\g</Filter>
+    </ClInclude>
+    <ClInclude Include="cg\cg_angles.hpp">
+      <Filter>Source Files\cg</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -295,6 +310,18 @@
     </ClCompile>
     <ClCompile Include="r\r_debug.cpp">
       <Filter>Source Files\r</Filter>
+    </ClCompile>
+    <ClCompile Include="tas\tas.cpp">
+      <Filter>Source Files\tas</Filter>
+    </ClCompile>
+    <ClCompile Include="tas\json_helpers.cpp">
+      <Filter>Source Files\tas</Filter>
+    </ClCompile>
+    <ClCompile Include="g\g_weapon.cpp">
+      <Filter>Source Files\g</Filter>
+    </ClCompile>
+    <ClCompile Include="cg\cg_angles.cpp">
+      <Filter>Source Files\cg</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

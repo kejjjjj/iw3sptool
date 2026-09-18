@@ -25,6 +25,7 @@ inline cg_s* cgs = reinterpret_cast<cg_s*>(0x6FA590);
 inline GfxWorld* gfxWorld = reinterpret_cast<GfxWorld*>(0x189A048);
 
 inline clientUIActive_t* clientUI = reinterpret_cast<clientUIActive_t*>(0x85BD70);
+inline kbutton_t* playersKb = reinterpret_cast<kbutton_t*>(0x815ED0);
 
 inline const char** g_entityBeginParsePoint = reinterpret_cast<const char**>(0xC1FEE8);
 inline const char** g_entityEndParsePoint = reinterpret_cast<const char**>(0xC1FEEC);

@@ -8189,7 +8189,7 @@ struct outPacket_t
 	int p_serverTime;		// usercmd->serverTime when packet was sent
 	int p_realtime;			// cls.realtime when packet was sent
 };
-constexpr auto CMD_MASK = 0x7F;
+constexpr auto CMD_MASK = 0x3F;
 struct clientActive_t
 {
 	bool usingAds;
@@ -8777,4 +8777,43 @@ enum $B87C0110D100A68234FECCEB9075A41E //channels
 struct PlayerNames_t
 {
 	char name[46];
+};
+struct __declspec(align(4)) kbutton_t
+{
+	int down[2];
+	unsigned int downtime;
+	unsigned int msec;
+	bool active;
+	bool wasPressed;
+};
+enum kbutton_buttons : __int32
+{
+	KB_LEFT = 0x0,
+	KB_RIGHT = 0x1,
+	KB_FORWARD = 0x2,
+	KB_BACKWARD = 0x3,
+	KB_LOOKUP = 0x4,
+	KB_LOOKDOWN = 0x5,
+	KB_MOVELEFT = 0x6,
+	KB_MOVERIGHT = 0x7,
+	KB_STRAFE = 0x8,
+	KB_SPEED = 0x9,
+	KB_STAND = 0xA,
+	KB_CROUCH = 0xB,
+	KB_GOSTAND = 0xC,
+	KB_MLOOK = 0xD,
+	KB_ATTACK = 0xE,
+	KB_BREATH = 0xF,
+	KB_FRAG = 0x10,
+	KB_SMOKE = 0x11,
+	KB_MELEE = 0x12,
+	KB_ACTIVATE = 0x13,
+	KB_RELOAD = 0x14,
+	KB_USERELOAD = 0x15,
+	KB_LEANLEFT = 0x16,
+	KB_LEANRIGHT = 0x17,
+	KB_PRONE = 0x18,
+	KB_THROW = 0x1A,
+	KB_SPRINT = 0x1B,
+	KB_TALK = 0x1D,
 };

@@ -13,6 +13,7 @@
 #include "r/r_active.hpp"
 #include "typedefs.hpp"
 #include "utils/hook.hpp"
+#include "cl/cl_main.hpp"
 
 using namespace std::string_literals;
 
@@ -22,6 +23,17 @@ char RB_DrawDebug(GfxViewParms* viewParms)
 {
 	CM_ShowCollision(viewParms);
 	RB_RenderPlayerHitboxes();
+
+	if (g_playback_script) {
+
+		if (const auto v = Dvar_FindMalleableVar("tas_showPrediction"); v && v->current.enabled) {
+			auto vert_count = CM_MakeOutlinesRenderableNoConnect(g_playback_script->m_predictedPositions, vec4_t{ 1.f, 0.f, 0.f, 1.f }, true, 0);
+
+			if (vert_count)
+				RB_DrawLines3D(vert_count / 2, 1, g_debugPolyVerts, true);
+		}
+
+	}
 
 	return hooktable::find<char, GfxViewParms*>(HOOK_PREFIX(__func__))->call(viewParms);
 }
@@ -62,6 +74,17 @@ int CM_MakeOutlinesRenderable(const std::vector<fvec3>& points, const float* col
 
 	return nverts;
 }
+int CM_MakeOutlinesRenderableNoConnect(const std::vector<fvec3>& points, const float* color, bool depthTest, int nverts)
+{
+	auto n_points = points.size();
+
+	for (auto i : std::views::iota(1u, n_points)) {
+		nverts = RB_AddDebugLine(g_debugPolyVerts, depthTest,
+			points[i - 1].As<float*>(), points[i].As<float*>(), color, nverts);
+	}
+
+	return nverts;
+}
 void CM_DrawCollisionPoly(const std::vector<fvec3>& points, const float* colorFloat, [[maybe_unused]]bool depthtest)
 {
 	RB_DrawPolyInteriors(points, colorFloat, true, depthtest);
@@ -97,7 +120,6 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 
 	cplane_s frustum_planes[6];
 	CreateFrustumPlanes(frustum_planes);
-
 
 	cm_renderinfo render_info =
 	{
@@ -181,9 +203,8 @@ void CM_ShowCollision([[maybe_unused]]GfxViewParms* GfxViewParms)
 
 		if (vert_count)
 			RB_DrawLines3D(vert_count / 2, 1, g_debugPolyVerts, render_info.depth_test);
-
-
 	}
+
 
 
 }

@@ -48,11 +48,10 @@ static void CG_DrawVelocity(float& y)
 
 static void CG_DrawDebug(float& y)
 {
-
 	char buff[256];
 	sprintf_s(buff,
-		"verts:   %i\n"
-		"indices: %i\n",
+		"verts:    %i\n"
+		"indices:  %i\n",
 		CGDebugData::tessVerts, CGDebugData::tessIndices);
 
 	R_DrawTextWithEffects(buff, "fonts/bigdevFont", 0, y, 0.3f, 0.4f, 0, vec4_t{ 1,0.753f,0.796f,0.7f }, 3, vec4_t{ 1,0,0,0 });

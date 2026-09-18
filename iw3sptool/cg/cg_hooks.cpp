@@ -50,6 +50,8 @@ void CG_CreateHooks()
 	hooktable::preserver<void>(HOOK_PREFIX("CG_UpdateViewWeaponAnim"), 0x433BB0, CG_UpdateViewWeaponAnim);
 	hooktable::preserver<void>(HOOK_PREFIX("CL_Disconnect"), 0x444F80, CL_Disconnect);
 
+	hooktable::preserver<void>(HOOK_PREFIX("CL_CreateNewCommands"), 0x440370, CL_CreateNewCommands);
+
 	std::this_thread::sleep_for(100ms);
 }
 void CG_ReleaseHooks()

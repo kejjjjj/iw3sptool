@@ -10,6 +10,7 @@
 #include "cm/cm_export.hpp"
 #include "cm/cm_entity.hpp"
 #include "cm/cm_brush.hpp"
+#include "cl/cl_main.hpp"
 
 const unsigned char completeVersion[] =
 {
@@ -49,8 +50,8 @@ void CG_Init()
     Cmd_AddCommand("cm_showCollisionFilter", CM_ShowCollisionFilter);
     Cmd_AddCommand("cm_showEntities", Cmd_ShowEntities_f);
     Cmd_AddCommand("cm_mapexport", CM_MapExport);
-
-    CG_CreatePermaHooks();
+    Cmd_AddCommand("tas_load", LoadTasScript_f);
+    Cmd_AddCommand("tas_start", StartTasScript_f);
 
     dvar_limits l{};
     dvar_value v{};
@@ -144,7 +145,14 @@ void CG_Init()
     Dvar_RegisterNew("pm_velocity", dvar_type::boolean, dvar_flags::saved, "show player velocity", v, l);
     Dvar_RegisterNew("pm_debug", dvar_type::boolean, dvar_flags::saved, "show debug information", v, l);
 
+    Dvar_RegisterNew("tas_strafebot", dvar_type::boolean, dvar_flags::saved, "enable manual strafebot", v, l);
+
+    v.enabled = true;
+    Dvar_RegisterNew("tas_showPrediction", dvar_type::boolean, dvar_flags::saved, "show the predicted path (will be inaccurate with dynamic updates such as the RPG)", v, l);
+
     //Dvar_RegisterNew("cm_experimental", dvar_type::boolean, dvar_flags::none, "Use experimental features", v, l);
+
+    CG_CreatePermaHooks();
 
     return;
 }

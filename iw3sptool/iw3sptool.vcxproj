@@ -80,6 +80,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;$(ProjectDir);$(ProjectDir)tas\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -101,7 +102,7 @@
       <AdditionalBMIDirectories>
       </AdditionalBMIDirectories>
       <ScanSourceForModuleDependencies>true</ScanSourceForModuleDependencies>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(DXSDK_DIR)Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DXSDK_DIR)Include;$(ProjectDir);$(ProjectDir)tas\include</AdditionalIncludeDirectories>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
@@ -123,6 +124,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>$(ProjectDir)tas\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -151,6 +153,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="bg\bg_pmove.hpp" />
+    <ClInclude Include="cg\cg_angles.hpp" />
     <ClInclude Include="cg\cg_hooks.hpp" />
     <ClInclude Include="cg\cg_init.hpp" />
     <ClInclude Include="cg\cg_local.hpp" />
@@ -176,6 +179,7 @@
     <ClInclude Include="global_macros.hpp" />
     <ClInclude Include="g\g_entity.hpp" />
     <ClInclude Include="g\g_spawn.hpp" />
+    <ClInclude Include="g\g_weapon.hpp" />
     <ClInclude Include="mh\buffer.h" />
     <ClInclude Include="mh\hde\hde32.h" />
     <ClInclude Include="mh\hde\hde64.h" />
@@ -191,6 +195,8 @@
     <ClInclude Include="r\r_debug.hpp" />
     <ClInclude Include="r\r_drawtools.hpp" />
     <ClInclude Include="scr\scr.hpp" />
+    <ClInclude Include="tas\json_helpers.hpp" />
+    <ClInclude Include="tas\tas.hpp" />
     <ClInclude Include="typedefs.hpp" />
     <ClInclude Include="utils\engine.hpp" />
     <ClInclude Include="utils\errors.hpp" />
@@ -199,6 +205,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bg\bg_pmove.cpp" />
+    <ClCompile Include="cg\cg_angles.cpp" />
     <ClCompile Include="cg\cg_hooks.cpp" />
     <ClCompile Include="cg\cg_init.cpp" />
     <ClCompile Include="cg\cg_view.cpp" />
@@ -220,6 +227,7 @@
     <ClCompile Include="fs_utilities.cpp" />
     <ClCompile Include="g\g_entity.cpp" />
     <ClCompile Include="g\g_spawn.cpp" />
+    <ClCompile Include="g\g_weapon.cpp" />
     <ClCompile Include="mh\buffer.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -246,6 +254,8 @@
     <ClCompile Include="r\r_debug.cpp" />
     <ClCompile Include="r\r_drawtools.cpp" />
     <ClCompile Include="scr\scr.cpp" />
+    <ClCompile Include="tas\json_helpers.cpp" />
+    <ClCompile Include="tas\tas.cpp" />
     <ClCompile Include="utils\engine.cpp" />
     <ClCompile Include="utils\functions.cpp" />
   </ItemGroup>
